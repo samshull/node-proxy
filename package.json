@@ -1,0 +1,28 @@
+{
+	"name": "NodeProxy",
+	"version": "0.1",
+	"description": "A module for node implemeting part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
+    "keywords": [
+        "interceptor",
+        "proxy",
+        "overload",
+        "__noSuchMethod__"
+    ],
+    "contributors": [ "Sam Shull <http://www.google.com/profiles/brickysam26>" ],
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "http://www.opensource.org/licenses/mit-license.html"
+        }
+    ],
+    "implements": [
+        "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
+    ],
+    "repositories": [
+        {
+            "type": "git",
+            "url": ""
+        }
+    ],
+    "main": "./lib/node-proxy"
+}
