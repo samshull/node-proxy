@@ -1,40 +1,43 @@
-node-proxy is an implementation of Harmony Proxies <http://wiki.ecmascript.org/doku.php?id=harmony:proxies>,
-that allows the developer to create "catch-all" property handlers for an object or a function.
+node-proxy is an implementation of Harmony Proxies http://wiki.ecmascript.org/doku.php?id=harmony:proxies
+that allows the developer to create "catch-all" property handlers for an object or a function in node.js.
 
 Methods:
 
-	Object create(handler [, proto ] ) throws Error, TypeError
+	Object create(ProxyHandler handler [, Object proto ] ) throws Error, TypeError
 
-	Function createFunction(handler, callTrap [, constructTrap ] ) throws Error, TypeError
+	Function createFunction(ProxyHandler handler, Function callTrap [, Function constructTrap ] ) throws Error, TypeError
 
-	Boolean isTrapping(void) throws Error
+	Boolean isTrapping(Object obj) throws Error
 
 
-Additional Methods (for ECMAScript 5 compatibliity):
+Additional Methods (for ECMAScript 5 compatibliity): @see http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-262.pdf
 
-	Boolean freeze(void) throws Error
+	Boolean freeze(Object obj) throws Error, TypeError
 
-	Boolean seal(void) throws Error
+	Boolean seal(Object obj) throws Error, TypeError
 
-	Boolean preventExtensions(void) throws Error
+	Boolean preventExtensions(Object obj) throws Error, TypeError
 
-	Boolean isFrozen(void) throws Error
+	Boolean isFrozen(Object obj) throws Error, TypeError
 
-	Boolean isSealed(void) throws Error
+	Boolean isSealed(Object obj) throws Error, TypeError
 
-	Boolean isExtensible(void) throws Error
+	Boolean isExtensible(Object obj) throws Error, TypeError
 
-	PropertyDescriptor getOwnPropertyDescriptor(String name) throws Error, TypeError
+	PropertyDescriptor getOwnPropertyDescriptor(Object obj, String name) throws Error, TypeError
 
-	Boolean defineProperty(String name, PropertyDescriptor pd) throws Error, TypeError
+	Boolean defineProperty(Object obj, String name, PropertyDescriptor pd) throws Error, TypeError
 
-	Boolean defineProperties(Object descriptors) throws Error, TypeError
+	Boolean defineProperties(Object obj, Object descriptors) throws Error, TypeError
 
 
 More methods:
 
-	Object hidden(Object obj, String name [, Object value] ) throws Error
+	Object hidden(Object obj, String name [, Object value ] ) throws Error
 		- Set or retrieve a hidden property on an Object
 
 	Object clone(Object obj) throws Error
 		- Create a shallow copy of an Object
+		
+	Boolean isProxy(Object obj)
+		- determine if an object was created by Proxy

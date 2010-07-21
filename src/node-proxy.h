@@ -102,6 +102,7 @@ class NodeProxy {
 	static Persistent<String> isSealed;
 	static Persistent<String> isFrozen;
 	static Persistent<String> isExtensible;
+	static Persistent<String> isProxy;
 	
 	static Persistent<String> hidden;
 	static Persistent<String> hiddenPrivate;
@@ -127,6 +128,8 @@ protected:
 	static Handle<Value> Freeze(const Arguments& args);
 	
 	static Handle<Value> IsLocked(const Arguments& args);
+	
+	static Handle<Value> IsProxy(const Arguments& args);
 	
 	static Handle<Value> GetOwnPropertyDescriptor(const Arguments& args);
 	

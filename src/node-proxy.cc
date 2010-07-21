@@ -69,6 +69,7 @@ Persistent<String> NodeProxy::isTrapping;
 Persistent<String> NodeProxy::isSealed;
 Persistent<String> NodeProxy::isFrozen;
 Persistent<String> NodeProxy::isExtensible;
+Persistent<String> NodeProxy::isProxy;
 
 Persistent<String> NodeProxy::hidden;
 Persistent<String> NodeProxy::hiddenPrivate;
@@ -121,7 +122,7 @@ NodeProxy::~NodeProxy() {
  *	presented in http://wiki.ecmascript.org/doku.php?id=harmony:proxies due to the nature of the V8 engine
  *
  *	@param ProxyHandler
- *	@return Boolean | Error
+ *	@returns Boolean | Error
  */
 Handle<Value> NodeProxy::ValidateProxyHandler(Local<Object> handler) {
 	HandleScope scope;
@@ -210,19 +211,17 @@ Handle<Value> NodeProxy::ValidateProxyHandler(Local<Object> handler) {
  *
  *
  *	@param mixed
- *	@return mixed
+ *	@returns mixed
+ *	@throws Error
  */
 Handle<Value> NodeProxy::Clone(const Arguments& args) {
 	HandleScope scope;
 	
 	if (args.Length() < 1) {
-		return THREXC("Proxy.clone requires at least one (1) argument.");
+		return THREXC("clone requires at least one (1) argument.");
 	}
 	
-	if (args[0]->IsObject()) {
-		return args[0]->ToObject()->Clone();
-	
-	} else if (args[0]->IsString()) {
+	if (args[0]->IsString()) {
 		return args[0]->ToObject()->Clone()->ToString();
 	
 	} else if (args[0]->IsBoolean()) {
@@ -237,14 +236,20 @@ Handle<Value> NodeProxy::Clone(const Arguments& args) {
 	} else if (args[0]->IsDate()) {
 		return Local<Date>::Cast(args[0]->ToObject()->Clone());
 	
+	} else if (args[0]->IsFunction()) {
+		return Local<Function>::Cast(args[0])->Clone();
+	
 	} else if (args[0]->IsNull()) {
 		return Local<Value>::New(Null());
 	
 	} else if (args[0]->IsUndefined()) {
 		return Local<Value>::New(Undefined());
 	
+	} else if (args[0]->IsObject()) {
+		return args[0]->ToObject()->Clone();
+	
 	} else {
-		return THREXC("Proxy.clone cannot determine the type of the argument.");
+		return THREXC("clone cannot determine the type of the argument.");
 	}
 }
 
@@ -257,13 +262,14 @@ Handle<Value> NodeProxy::Clone(const Arguments& args) {
  *	@param Object
  *	@param String name
  *	@param mixed value - optional
- *	@return mixed
+ *	@returns mixed
+ *	@throws Error
  */
 Handle<Value> NodeProxy::Hidden(const Arguments& args) {
 	HandleScope scope;
 	
 	if (args.Length() < 2) {
-		return THREXC("Proxy.hidden requires at least two (2) arguments.");
+		return THREXC("hidden requires at least two (2) arguments.");
 	}
 	
 	Local<Object> obj = args[0]->ToObject();
@@ -276,6 +282,30 @@ Handle<Value> NodeProxy::Hidden(const Arguments& args) {
 }
 
 /**
+ *	Determine if an Object was created by Proxy
+ *
+ *	@param Object
+ *	@returns Boolean
+ */
+Handle<Value> NodeProxy::IsProxy(const Arguments& args) {
+	HandleScope scope;
+	
+	if (args.Length() < 1) {
+		return THREXC("isProxy requires at least one (1) argument.");
+	}
+	
+	Local<Object> obj = args[0]->ToObject();
+	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
+	
+	if (!temp.IsEmpty() && temp->IsObject()) {
+		Handle<Value> ret = ValidateProxyHandler(temp->ToObject());
+		return Boolean::New(ret->IsBoolean() && ret->BooleanValue());
+	}
+	
+	return False();
+}
+
+/**
  *	Create an object that has ProxyHandler intercepts attached and 
  *	optionally implements the prototype of another object
  *
@@ -285,18 +315,19 @@ Handle<Value> NodeProxy::Hidden(const Arguments& args) {
  *
  *	@param ProxyHandler - @see NodeProxy::ValidateProxyHandler
  *	@param Object - optional, the prototype object to implement
- *	@return Object
+ *	@returns Object
+ *	@throws Error, TypeError
  */
 Handle<Value> NodeProxy::Create(const Arguments& args) {
     HandleScope scope;
 	Local<Object> proxyHandler;
 
     if (args.Length() < 1) {
-		return THREXC("Proxy.create requires at least one (1) argument.");
+		return THREXC("create requires at least one (1) argument.");
 	}
 	
     if (!args[0]->IsObject()) {
-		return THR_TYPE_ERROR("Proxy.create requires the first argument to be an Object.");
+		return THR_TYPE_ERROR("create requires the first argument to be an Object.");
 	}
 	
 	//cloning here allows maintaining reference to original functions
@@ -309,7 +340,7 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 	}
 	
 	if (args.Length() > 1 && !args[1]->IsObject()) {
-		return THR_TYPE_ERROR("Proxy.create requires the second argument to be an Object.");
+		return THR_TYPE_ERROR("create requires the second argument to be an Object.");
 	}
 	
 	//manage locking states
@@ -323,11 +354,14 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 	//named property handlers
 	temp->SetNamedPropertyHandler(GetNamedProperty, 
 								  SetNamedProperty, 
+								  
+//different versions of V8 require different return types
 #if PROXY_NODE_VERSION_AT_LEAST(0, 1, 101)
 								  QueryNamedProperty, 
 #else
 								  QueryNamedPropertyInteger, 
 #endif
+
 								  DeleteNamedProperty, 
 								  EnumerateNamedProperties);
 	//indexed property handlers
@@ -348,21 +382,27 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 }
 
 /**
+ *	Create a function that has ProxyHandler intercepts attached and 
+ *	sets a call trap function for invokation as well as an optional 
+ *	constructor trap
  *
  *
- *
- *
+ *	@param ProxyHandler - @see NodeProxy::ValidateProxyHandler
+ *	@param Function - call trap
+ *	@param Function - optional, constructor trap
+ *	@returns Function
+ *	@throws Error, TypeError
  */
 Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
     HandleScope scope;
 	Local<Object> proxyHandler;
 	
     if (args.Length() < 2) {
-		return THREXC("Proxy.createFunction requires at least two (2) arguments.");
+		return THREXC("createFunction requires at least two (2) arguments.");
 	}
 	
     if (!args[0]->IsObject()) {
-		return THR_TYPE_ERROR("Proxy.createFunction requires the first argument to be an Object.");
+		return THR_TYPE_ERROR("createFunction requires the first argument to be an Object.");
 	}
 	
 	//cloning here allows maintaining reference to original functions
@@ -375,11 +415,11 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 	}
 	
     if (!args[1]->IsFunction()) {
-		return THR_TYPE_ERROR("Proxy.createFunction requires the second argument to be a Function.");
+		return THR_TYPE_ERROR("createFunction requires the second argument to be a Function.");
 	}
 	
 	if (args.Length() > 2 && !args[2]->IsFunction()) {
-		return THR_TYPE_ERROR("Proxy.createFunction requires the second argument to be a Function.");
+		return THR_TYPE_ERROR("createFunction requires the second argument to be a Function.");
 	}
 	
 	proxyHandler->SetHiddenValue(NodeProxy::callTrap, args[1]);
@@ -399,12 +439,15 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 	Local<ObjectTemplate> instance = temp->InstanceTemplate();
 	
 	instance->SetNamedPropertyHandler(GetNamedProperty, 
-									  SetNamedProperty, 
+									  SetNamedProperty,
+
+//different versions of V8 require different return types
 #if PROXY_NODE_VERSION_AT_LEAST(0, 1, 101)
 									  QueryNamedProperty, 
 #else
 									  QueryNamedPropertyInteger, 
 #endif 
+
 									  DeleteNamedProperty, 
 									  EnumerateNamedProperties);
 	
@@ -426,9 +469,12 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 }
 
 /**
+ *	Used as a handler for freeze, seal, and preventExtensions
+ *	to lock the state of a Proxy created object
  *
- *
- *
+ *	@param Object
+ *	@returns Boolean
+ *	@throws Error, TypeError
  */
 Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 	HandleScope scope;
@@ -444,7 +490,8 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 	Local<Value> hide = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
 	
 	if (hide.IsEmpty() || !hide->IsObject()) {
-		return False();
+		//return False();
+		return THR_TYPE_ERROR("Locking functions expect first argument to be intialized by Proxy");
 	}
 	
 	Local<Object> handler = hide->ToObject();
@@ -520,9 +567,11 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 }
 
 /**
+ *	Used as a handler for determining isTrapped, isFrozen, isSealed, and isExtensible
  *
- *
- *
+ *	@param Object
+ *	@returns Boolean
+ *	@throws Error, TypeError
  */
 Handle<Value> NodeProxy::IsLocked(const Arguments& args) {
 	HandleScope scope;
@@ -538,7 +587,8 @@ Handle<Value> NodeProxy::IsLocked(const Arguments& args) {
 	Local<Value> hide = arg->GetHiddenValue(NodeProxy::hiddenPrivate);
 	
 	if (hide.IsEmpty() || !hide->IsObject()) {
-		return False();
+		//return False();
+		return THR_TYPE_ERROR("Locking functions expect first argument to be intialized by Proxy");
 	}
 	
 	Local<Object> obj = hide->ToObject();
@@ -560,19 +610,22 @@ Handle<Value> NodeProxy::IsLocked(const Arguments& args) {
 }
 
 /**
+ *	Part of ECMAScript 5, but only for use on Objects and Functions created by Proxy
  *
- *
- *
+ *	@param Object
+ *	@param String - the name of the property
+ *	@returns PropertyDescriptor
+ *	@throws Error, TypeError
  */
 Handle<Value> NodeProxy::GetOwnPropertyDescriptor(const Arguments& args) {
 	HandleScope scope;
 	
 	if (args.Length() < 2) {
-		return THREXC("Proxy.getOwnPropertyDescriptor requires at least two (2) arguments.");
+		return THREXC("getOwnPropertyDescriptor requires at least two (2) arguments.");
 	}
 	
     if (!args[1]->IsString() && !args[1]->IsNumber()) {
-		return THR_TYPE_ERROR("Proxy.getOwnPropertyDescriptor requires the second argument to be a String or a Number.");
+		return THR_TYPE_ERROR("getOwnPropertyDescriptor requires the second argument to be a String or a Number.");
 	}
 	
 	Local<Object> obj = args[0]->ToObject();
@@ -580,7 +633,7 @@ Handle<Value> NodeProxy::GetOwnPropertyDescriptor(const Arguments& args) {
 	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
 	
 	if (temp.IsEmpty() || !temp->IsObject()) {
-		return THREXC("Proxy.getOwnPropertyDescriptor only works on Objects created by Proxy.create or Proxy.createFunction.");
+		return THR_TYPE_ERROR("getOwnPropertyDescriptor expects first argument to be intialized by Proxy");
 	}
 	
 	Local<Object> handler = temp->ToObject();
@@ -597,23 +650,27 @@ Handle<Value> NodeProxy::GetOwnPropertyDescriptor(const Arguments& args) {
 }
 
 /**
+ *	Part of ECMAScript 5, but only for use on Objects and Functions created by Proxy
  *
- *
- *
+ *	@param Object
+ *	@param String - the name of the property
+ *	@param PropertyDescriptor
+ *	@returns Boolean
+ *	@throws Error, TypeError
  */
 Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 	HandleScope scope;
 	
 	if (args.Length() < 3) {
-		return THREXC("Proxy.defineProperty requires at least three (3) arguments.");
+		return THREXC("defineProperty requires at least three (3) arguments.");
 	}
 	
     if (!args[1]->IsString() && !args[1]->IsNumber()) {
-		return THR_TYPE_ERROR("Proxy.defineProperty requires the second argument to be a String or a Number.");
+		return THR_TYPE_ERROR("defineProperty requires the second argument to be a String or a Number.");
 	}
 	
     if (!args[2]->IsObject()) {// || !IsPropertyDescriptor(args[2])) {
-		return THR_TYPE_ERROR("Proxy.defineProperty requires the third argument to be an Object of the type PropertyDescriptor.");
+		return THR_TYPE_ERROR("defineProperty requires the third argument to be an Object of the type PropertyDescriptor.");
 	}
 	
 	Local<Object> obj = args[0]->ToObject();
@@ -621,7 +678,7 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
 	
 	if (temp.IsEmpty() || !temp->IsObject()) {
-		return THREXC("Proxy.defineProperty only works on Objects created by Proxy.create or Proxy.createFunction.");
+		return THR_TYPE_ERROR("defineProperty expects first argument to be intialized by Proxy");
 	}
 	
 	Local<Object> handler = temp->ToObject();
@@ -652,19 +709,22 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 }
 
 /**
+ *	Part of ECMAScript 5, but only for use on Objects and Functions created by Proxy
  *
- *
- *
+ *	@param Object
+ *	@param Object - name/PropertyDescriptor pairs
+ *	@returns Boolean
+ *	@throws Error, TypeError
  */
 Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
 	HandleScope scope;
 	
 	if (args.Length() < 2) {
-		return THREXC("Proxy.defineProperty requires at least three (3) arguments.");
+		return THREXC("defineProperty requires at least three (3) arguments.");
 	}
 	
     if (!args[1]->IsObject()) {// || !IsPropertyDescriptor(args[2])) {
-		return THR_TYPE_ERROR("Proxy.defineProperty requires the third argument to be an Object of the type PropertyDescriptor.");
+		return THR_TYPE_ERROR("defineProperty requires the third argument to be an Object of the type PropertyDescriptor.");
 	}
 	
 	Local<Object> obj = args[0]->ToObject();
@@ -672,7 +732,7 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
 	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
 	
 	if (temp.IsEmpty() || !temp->IsObject()) {
-		return THREXC("Proxy.defineProperty only works on Objects created by Proxy.create or Proxy.createFunction.");
+		return THR_TYPE_ERROR("defineProperties expects first argument to be intialized by Proxy");
 	}
 	
 	Local<Object> handler = temp->ToObject();
@@ -725,7 +785,9 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
  *	Function used for a constructor and invocation handler of a Proxy created function
  *	Calls the appropriate function attached when the Proxy was created
  *
- *
+ *	@param ...args
+ *	@returns mixed
+ *	@throws Error
  */
 Handle<Value> NodeProxy::New(const Arguments& args) {
     HandleScope scope;
@@ -1231,6 +1293,7 @@ void NodeProxy::Init(Handle<Object> target){
 	NodeProxy::isFrozen = NODE_PSYMBOL("isFrozen");
 	NodeProxy::isExtensible = NODE_PSYMBOL("isExtensible");
 	NodeProxy::isTrapping = NODE_PSYMBOL("isTrapping");
+	NodeProxy::isProxy = NODE_PSYMBOL("isProxy");
 	
 //namespacing for hidden properties of visible objects
 	NodeProxy::hidden = NODE_PSYMBOL("NodeProxy::hidden::");
@@ -1242,70 +1305,74 @@ void NodeProxy::Init(Handle<Object> target){
 	Local<String> createName = String::New("create");
 	Local<Function> create = FunctionTemplate::New(Create)->GetFunction();
 	create->SetName(createName);
-	target->Set(createName, create);
+	target->Set(createName, create, DontDelete);
 	
 	Local<String> createFunctionName = String::New("createFunction");
 	Local<Function> createFunction = FunctionTemplate::New(CreateFunction)->GetFunction();
 	create->SetName(createFunctionName);
-	target->Set(createFunctionName, createFunction);
+	target->Set(createFunctionName, createFunction, DontDelete);
 	
 //freeze function assignment
 	Local<Function> freeze = FunctionTemplate::New(Freeze)->GetFunction();
 	freeze->SetName(NodeProxy::freeze);
-	target->Set(NodeProxy::freeze, freeze);
+	target->Set(NodeProxy::freeze, freeze, DontDelete);
 	
 	Local<Function> seal = FunctionTemplate::New(Freeze)->GetFunction();
 	seal->SetName(NodeProxy::seal);
-	target->Set(NodeProxy::seal, seal);
+	target->Set(NodeProxy::seal, seal, DontDelete);
 	
 	Local<Function> prevent = FunctionTemplate::New(Freeze)->GetFunction();
 	prevent->SetName(NodeProxy::preventExtensions);
-	target->Set(NodeProxy::preventExtensions, prevent);
+	target->Set(NodeProxy::preventExtensions, prevent, DontDelete);
 	
 //check function assignment
 	Local<Function> isfrozen = FunctionTemplate::New(IsLocked)->GetFunction();
 	isfrozen->SetName(NodeProxy::isFrozen);
-	target->Set(NodeProxy::isFrozen, isfrozen);
+	target->Set(NodeProxy::isFrozen, isfrozen, DontDelete);
 	
 	Local<Function> issealed = FunctionTemplate::New(IsLocked)->GetFunction();
 	issealed->SetName(NodeProxy::isSealed);
-	target->Set(NodeProxy::isSealed, issealed);
+	target->Set(NodeProxy::isSealed, issealed, DontDelete);
 	
 	Local<Function> isextensible = FunctionTemplate::New(IsLocked)->GetFunction();
 	isextensible->SetName(NodeProxy::isExtensible);
-	target->Set(NodeProxy::isExtensible, isextensible);
+	target->Set(NodeProxy::isExtensible, isextensible, DontDelete);
 	
 //part of harmony proxies
 	Local<Function> istrapping = FunctionTemplate::New(IsLocked)->GetFunction();
 	istrapping->SetName(NodeProxy::isTrapping);
-	target->Set(NodeProxy::isTrapping, istrapping);
+	target->Set(NodeProxy::isTrapping, istrapping, DontDelete);
 	
-//required for ECMAScript 5
+//ECMAScript 5
 	Local<String> getOwnPropertyDescriptorName = String::New("getOwnPropertyDescriptor");
 	Local<Function> getOwnPropertyDescriptor = FunctionTemplate::New(GetOwnPropertyDescriptor)->GetFunction();
 	getOwnPropertyDescriptor->SetName(getOwnPropertyDescriptorName);
-	target->Set(getOwnPropertyDescriptorName, getOwnPropertyDescriptor);
+	target->Set(getOwnPropertyDescriptorName, getOwnPropertyDescriptor, DontDelete);
 	
 	Local<String> definePropertyName = String::New("defineProperty");
 	Local<Function> defineProperty = FunctionTemplate::New(DefineProperty)->GetFunction();
 	defineProperty->SetName(definePropertyName);
-	target->Set(definePropertyName, defineProperty);
+	target->Set(definePropertyName, defineProperty, DontDelete);
 	
 	Local<String> definePropertiesName = String::New("defineProperties");
 	Local<Function> defineProperties = FunctionTemplate::New(DefineProperties)->GetFunction();
 	defineProperties->SetName(definePropertiesName);
-	target->Set(definePropertiesName, defineProperties);
+	target->Set(definePropertiesName, defineProperties, DontDelete);
 	
 //additional functions
 	Local<String> cloneName = String::New("clone");
 	Local<Function> clone = FunctionTemplate::New(Clone)->GetFunction();
 	clone->SetName(cloneName);
-	target->Set(cloneName, clone);
+	target->Set(cloneName, clone, DontDelete);
 	
 	Local<String> hiddenName = String::New("hidden");
 	Local<Function> hidden = FunctionTemplate::New(Hidden)->GetFunction();
 	hidden->SetName(hiddenName);
-	target->Set(hiddenName, hidden);
+	target->Set(hiddenName, hidden, DontDelete);
+	
+	Local<Function> isProxy_ = FunctionTemplate::New(IsProxy)->GetFunction();
+	hidden->SetName(NodeProxy::isProxy);
+	target->Set(NodeProxy::isProxy, isProxy_, DontDelete);
 }
 
 /**
