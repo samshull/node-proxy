@@ -41,3 +41,6 @@ More methods:
 		
 	Boolean isProxy(Object obj)
 		- determine if an object was created by Proxy
+	
+	Boolean setPrototype(Object obj, Object obj) throws Error
+		-set the prototype of a given object to the second given object

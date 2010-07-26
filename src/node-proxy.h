@@ -123,6 +123,8 @@ protected:
 	
 	static Handle<Value> Create(const Arguments& args);
 	
+	static Handle<Value> SetPrototype(const Arguments& args);
+	
 	static Handle<Value> CreateFunction(const Arguments& args);
 	
 	static Handle<Value> Freeze(const Arguments& args);

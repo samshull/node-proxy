@@ -282,6 +282,24 @@ Handle<Value> NodeProxy::Hidden(const Arguments& args) {
 }
 
 /**
+ *	Set the prototype of an object
+ *
+ *	@param Object
+ *	@param Object
+ *	@returns Boolean
+ *	@throws Error
+ */
+Handle<Value> NodeProxy::SetPrototype(const Arguments& args) {
+	HandleScope scope;
+	
+	if (args.Length() < 2) {
+		return THREXC("setPrototype requires at least two (2) arguments.");
+	}
+	
+	return Boolean::New(args[0]->ToObject()->SetPrototype(args[1]));
+}
+
+/**
  *	Determine if an Object was created by Proxy
  *
  *	@param Object
@@ -1369,6 +1387,11 @@ void NodeProxy::Init(Handle<Object> target){
 	Local<Function> hidden = FunctionTemplate::New(Hidden)->GetFunction();
 	hidden->SetName(hiddenName);
 	target->Set(hiddenName, hidden, DontDelete);
+	
+	Local<String> setPrototypeName = String::New("setPrototype");
+	Local<Function> setPrototype = FunctionTemplate::New(SetPrototype)->GetFunction();
+	setPrototype->SetName(setPrototypeName);
+	target->Set(setPrototypeName, setPrototype, DontDelete);
 	
 	Local<Function> isProxy_ = FunctionTemplate::New(IsProxy)->GetFunction();
 	hidden->SetName(NodeProxy::isProxy);
