@@ -1,7 +1,7 @@
 {
-	"name": "NodeProxy",
-	"version": "0.1",
-	"description": "A module for node implemeting part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
+	"name": "node-proxy",
+	"version": "0.1.5",
+	"description": "A module for node implementing part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
     "keywords": [
         "interceptor",
         "proxy",
@@ -15,14 +15,23 @@
             "url": "http://www.opensource.org/licenses/mit-license.html"
         }
     ],
+	"bugs":{
+		"web":"http://github.com/brickysam26/node-proxy/issues"
+	},
     "implements": [
         "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
     ],
+	"engines": [
+		"node >=0.1.100"
+	],
     "repositories": [
         {
             "type": "git",
-            "url": ""
+            "url": "http://github.com/brickysam26/node-proxy"
         }
     ],
-    "main": "./lib/node-proxy"
+    "main": "./lib/node-proxy.node",
+	"scripts":{
+		"install":"make"
+	}
 }
