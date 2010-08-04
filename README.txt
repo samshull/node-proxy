@@ -5,7 +5,7 @@ Author: Sam Shull
 Repository: http://github.com/brickysam26/node-proxy
 Issues: http://github.com/brickysam26/node-proxy/issues
 
-*** This does not work appropriately in node versions 0.1.100 - 0.1.103. You will need to install node_version.h in $PREFIX/include/node
+*** This does not work appropriately in node versions 0.1.100 - 0.1.102. You will need to install node_version.h in $PREFIX/include/node
 
 Methods:
 
