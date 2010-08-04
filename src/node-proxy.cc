@@ -375,9 +375,9 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 								  
 //different versions of V8 require different return types
 #if PROXY_NODE_VERSION_AT_LEAST(0, 1, 101)
-								  QueryNamedProperty, 
-#else
 								  QueryNamedPropertyInteger, 
+#else
+								  QueryNamedProperty, 
 #endif
 
 								  DeleteNamedProperty, 
@@ -461,9 +461,9 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 
 //different versions of V8 require different return types
 #if PROXY_NODE_VERSION_AT_LEAST(0, 1, 101)
-									  QueryNamedProperty, 
-#else
 									  QueryNamedPropertyInteger, 
+#else
+									  QueryNamedProperty, 
 #endif 
 
 									  DeleteNamedProperty, 
