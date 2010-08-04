@@ -374,12 +374,14 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 								  SetNamedProperty, 
 								  
 //different versions of V8 require different return types
-#if PROXY_NODE_VERSION_AT_LEAST(0, 1, 101)
+//0.1.97 is where the switch occurred in v8, but NODE_MAJOR_VERSION wasn't added until 0.1.100
+#ifndef NODE_MAJOR_VERSION
+								  QueryNamedProperty, 
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
 								  QueryNamedPropertyInteger, 
 #else
 								  QueryNamedProperty, 
 #endif
-
 								  DeleteNamedProperty, 
 								  EnumerateNamedProperties);
 	//indexed property handlers
@@ -460,11 +462,14 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 									  SetNamedProperty,
 
 //different versions of V8 require different return types
-#if PROXY_NODE_VERSION_AT_LEAST(0, 1, 101)
-									  QueryNamedPropertyInteger, 
+//0.1.97 is where the switch occurred in v8, but NODE_MAJOR_VERSION wasn't added until 0.1.100
+#ifndef NODE_MAJOR_VERSION
+								  QueryNamedProperty, 
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
+								  QueryNamedPropertyInteger, 
 #else
-									  QueryNamedProperty, 
-#endif 
+								  QueryNamedProperty, 
+#endif
 
 									  DeleteNamedProperty, 
 									  EnumerateNamedProperties);
@@ -1267,55 +1272,55 @@ void NodeProxy::Init(Handle<Object> target){
 	HandleScope scope;
 	
 //required properties
-	NodeProxy::getOwnPropertyDescriptor = NODE_PSYMBOL("getOwnPropertyDescriptor");
-	NodeProxy::getPropertyDescriptor = NODE_PSYMBOL("getPropertyDescriptor");
-	NodeProxy::defineProperty = NODE_PSYMBOL("defineProperty");
-	NodeProxy::getOwnPropertyNames = NODE_PSYMBOL("getOwnPropertyNames");
-	NodeProxy::delete_ = NODE_PSYMBOL("delete");
-	NodeProxy::enumerate = NODE_PSYMBOL("enumerate");
-	NodeProxy::fix = NODE_PSYMBOL("fix");
+	NodeProxy::getOwnPropertyDescriptor = PROXY_NODE_PSYMBOL("getOwnPropertyDescriptor");
+	NodeProxy::getPropertyDescriptor = PROXY_NODE_PSYMBOL("getPropertyDescriptor");
+	NodeProxy::defineProperty = PROXY_NODE_PSYMBOL("defineProperty");
+	NodeProxy::getOwnPropertyNames = PROXY_NODE_PSYMBOL("getOwnPropertyNames");
+	NodeProxy::delete_ = PROXY_NODE_PSYMBOL("delete");
+	NodeProxy::enumerate = PROXY_NODE_PSYMBOL("enumerate");
+	NodeProxy::fix = PROXY_NODE_PSYMBOL("fix");
 	
 //optional properties
-	NodeProxy::get = NODE_PSYMBOL("get");
-	NodeProxy::set = NODE_PSYMBOL("set");
-	NodeProxy::has = NODE_PSYMBOL("has");
-	NodeProxy::hasOwn = NODE_PSYMBOL("hasOwn");
-	NodeProxy::enumerateOwn = NODE_PSYMBOL("enumerateOwn");
+	NodeProxy::get = PROXY_NODE_PSYMBOL("get");
+	NodeProxy::set = PROXY_NODE_PSYMBOL("set");
+	NodeProxy::has = PROXY_NODE_PSYMBOL("has");
+	NodeProxy::hasOwn = PROXY_NODE_PSYMBOL("hasOwn");
+	NodeProxy::enumerateOwn = PROXY_NODE_PSYMBOL("enumerateOwn");
 	
 //createFunction
-	NodeProxy::callTrap = NODE_PSYMBOL("callTrap");
-	NodeProxy::constructorTrap = NODE_PSYMBOL("constructorTrap");
+	NodeProxy::callTrap = PROXY_NODE_PSYMBOL("callTrap");
+	NodeProxy::constructorTrap = PROXY_NODE_PSYMBOL("constructorTrap");
 	
 //properties of PropertyDescriptor
-	NodeProxy::value = NODE_PSYMBOL("value");
-	NodeProxy::writable = NODE_PSYMBOL("writable");
-	NodeProxy::enumerable = NODE_PSYMBOL("enumerable");
-	NodeProxy::configurable = NODE_PSYMBOL("configurable");
+	NodeProxy::value = PROXY_NODE_PSYMBOL("value");
+	NodeProxy::writable = PROXY_NODE_PSYMBOL("writable");
+	NodeProxy::enumerable = PROXY_NODE_PSYMBOL("enumerable");
+	NodeProxy::configurable = PROXY_NODE_PSYMBOL("configurable");
 	
 //misc
-	NodeProxy::name = NODE_PSYMBOL("name");
+	NodeProxy::name = PROXY_NODE_PSYMBOL("name");
 	
 //hidden property names
-	NodeProxy::trapping = NODE_PSYMBOL("trapping");
-	NodeProxy::sealed = NODE_PSYMBOL("sealed");
-	NodeProxy::frozen = NODE_PSYMBOL("frozen");
-	NodeProxy::extensible = NODE_PSYMBOL("extensible");
+	NodeProxy::trapping = PROXY_NODE_PSYMBOL("trapping");
+	NodeProxy::sealed = PROXY_NODE_PSYMBOL("sealed");
+	NodeProxy::frozen = PROXY_NODE_PSYMBOL("frozen");
+	NodeProxy::extensible = PROXY_NODE_PSYMBOL("extensible");
 	
 //fixable calls
-	NodeProxy::seal = NODE_PSYMBOL("seal");
-	NodeProxy::freeze = NODE_PSYMBOL("freeze");
-	NodeProxy::preventExtensions = NODE_PSYMBOL("preventExtensions");
+	NodeProxy::seal = PROXY_NODE_PSYMBOL("seal");
+	NodeProxy::freeze = PROXY_NODE_PSYMBOL("freeze");
+	NodeProxy::preventExtensions = PROXY_NODE_PSYMBOL("preventExtensions");
 	
 //fixed checks
-	NodeProxy::isSealed = NODE_PSYMBOL("isSealed");
-	NodeProxy::isFrozen = NODE_PSYMBOL("isFrozen");
-	NodeProxy::isExtensible = NODE_PSYMBOL("isExtensible");
-	NodeProxy::isTrapping = NODE_PSYMBOL("isTrapping");
-	NodeProxy::isProxy = NODE_PSYMBOL("isProxy");
+	NodeProxy::isSealed = PROXY_NODE_PSYMBOL("isSealed");
+	NodeProxy::isFrozen = PROXY_NODE_PSYMBOL("isFrozen");
+	NodeProxy::isExtensible = PROXY_NODE_PSYMBOL("isExtensible");
+	NodeProxy::isTrapping = PROXY_NODE_PSYMBOL("isTrapping");
+	NodeProxy::isProxy = PROXY_NODE_PSYMBOL("isProxy");
 	
 //namespacing for hidden properties of visible objects
-	NodeProxy::hidden = NODE_PSYMBOL("NodeProxy::hidden::");
-	NodeProxy::hiddenPrivate = NODE_PSYMBOL("NodeProxy::hiddenPrivate::");
+	NodeProxy::hidden = PROXY_NODE_PSYMBOL("NodeProxy::hidden::");
+	NodeProxy::hiddenPrivate = PROXY_NODE_PSYMBOL("NodeProxy::hiddenPrivate::");
 	
 //function creation
 	

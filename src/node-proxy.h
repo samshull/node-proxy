@@ -53,6 +53,7 @@
 #define THREXC(str) ThrowException(Exception::Error(String::New(str)))
 #define THREXCW(str) ThrowException(Exception::Error(str))
 #define THR_TYPE_ERROR(str) ThrowException(Exception::TypeError(String::New(str)))
+#define PROXY_NODE_PSYMBOL(s) Persistent<String>::New(String::NewSymbol(s))
 
 //had to redefine NODE_VERSION_AT_LEAST here because of missing parenthesis
 #define PROXY_NODE_VERSION_AT_LEAST(major, minor, patch) \
