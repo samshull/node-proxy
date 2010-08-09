@@ -149,6 +149,7 @@ protected:
 	static Handle<Boolean> QueryNamedProperty(Local<String> name, const AccessorInfo &info);
 
 	static Handle<Integer> QueryNamedPropertyInteger(Local<String> name, const AccessorInfo &info);
+	static Handle<Integer> GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd);
 
 	static Handle<Boolean> DeleteNamedProperty(Local<String> name, const AccessorInfo &info);
 
