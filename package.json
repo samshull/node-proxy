@@ -1,6 +1,6 @@
 {
 	"name": "node-proxy",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "A module for node implementing part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
     "keywords": [
         "interceptor",
