@@ -24,21 +24,18 @@ Still working on this
 					called = "getPropertyDescriptor";
 					return name in handlers ? handlers[name] : undef;
 				},
-				defineProperty:function(name, pd){
-					called = "defineProperty";
-					if (name in handlers && !handlers[name].configurable) {
-						return null;
-					}
-					handlers[name] = pd;
-					return null;
-				},
+				defineProperty: defineProperty,
 				getOwnPropertyNames:function(){
 					called = "getOwnPropertyNames";
 					return Object.getOwnPropertyNames(handlers);
 				},
 				"delete":function(name){
 					called = "delete";
-					return !(name in handlers) ? true : (delete handlers[name]);
+					var r = true;
+					if (name in handlers) {
+						r = (delete handlers[name]);
+					}
+					return r;
 				},
 				enumerate:function(){
 					called = "enumerate";
@@ -50,6 +47,8 @@ Still working on this
 				},
 				has:function(name){
 					called = "has";
+					//sys.puts("has called on: "+name);
+					//sys.puts(name in handlers)
 					return (name in handlers);
 				},
 				hasOwn:function(name){
@@ -58,6 +57,7 @@ Still working on this
 				},
 				get:function(receiver, name){
 					called = "get";
+					//sys.puts(arguments.callee.caller)
 					if (!(name in handlers)) {
 						return undef;
 					}
@@ -68,14 +68,15 @@ Still working on this
 				set:function(receiver, name, val){
 					called = "set";
 					if (!(name in handlers)) {
-						handlers[name] = {
+						defineProperty.call(this, name, {
 							configurable:true,
 							writable:true,
 							enumerable:true,
 							value:val,
 							get:function(){return val},
 							set:function(v){val=v}
-						};
+						});
+						called = "set";
 						return true;
 					}
 					if (!handlers[name].configurable) {
@@ -93,6 +94,15 @@ Still working on this
 					return Object.getOwnPropertyNames(handlers);
 				},
 			});
+			
+			function defineProperty(name, pd){
+				called = "defineProperty";
+				if (name in handlers && !handlers[name].configurable) {
+					return null;
+				}
+				handlers[name] = pd;
+				return null;
+			}
 		},
 		protoProxy = function(){},
 		proxyTest,
@@ -108,45 +118,53 @@ Still working on this
 	sys.puts("Running tests...");
 	sys.puts("Test 1 of " + total_tests + ": Creating proxy");
 	proxyTest = createProxy(handlers);
-	assert.equal(called, "createProxy", "createProxy was called");
+	assert.equal(called, "createProxy", "createProxy was not the last method called");
+	assert.ok(typeof proxyTest == "object");
 	
 	sys.puts("Test 2 of " + total_tests + ": has");
-	assert.ok("first" in proxyTest);
-	assert.equal(called, "has", "has was called");
+	assert.ok("first" in proxyTest, "proxyTest does not have a property named 'first'");
+	//assert.equal(called, "has", "the has method was not the last method called");
 	
 	sys.puts("Test 3 of " + total_tests + ": Accessing getter");
 	assert.equal(proxyTest.first, firstValue);
-	assert.equal(called, "get", "get was called");
+	assert.equal(called, "get", "the get method was not the last method called");
 	
 	sys.puts("Test 4 of " + total_tests + ": Accessing setter");
 	proxyTest.first = "changed";
-	assert.equal(called, "set", "set was called");
-	assert.equal(proxyTest.first, firstValue, "proxyTest.first == firstValue");
+	assert.equal(called, "set", "the set method was not the last method called");
+	assert.equal(proxyTest.first, firstValue, "proxyTest.first != firstValue");
 	
 	sys.puts("Test 5 of " + total_tests + ": set property");
 	proxyTest.second = "secondProp";
-	assert.equal(called, "set", "set new property");
+	assert.equal(called, "set", "the set method was not the last method called");
 	
 	sys.puts("Test 6 of " + total_tests + ": Iterate property names");
 	count = 0;
 	for (p in proxyTest){++count;}
-	assert.equal(count, 2, "there are 2 properties on proxyTest");
+	assert.equal(count, 2, "there are not 2 properties on proxyTest");
 	
 	sys.puts("Test 7 of " + total_tests + ": getOwnPropertyNames");
 	names = Object.getOwnPropertyNames(proxyTest);
-	assert.equal(called, "enumerate", "Object.getOwnPropertyNames invokes enumerate");
+	assert.equal(called, "enumerate", "Object.getOwnPropertyNames did not invoke enumerate");
 	assert.ok(names instanceof Array);
-	assert.equal(names.length, 2, "2 property names were returned");
-	assert.equal(names[0], "first", "The first property name is 'first'");
-	assert.equal(names[1], "second", "The second property name is 'second'");
+	assert.equal(names.length, 2, "2 property names were not returned");
+	assert.equal(names[0], "first", "The first property name is not 'first'");
+	assert.equal(names[1], "second", "The second property name is not 'second'");
 	
 	sys.puts("Test 8 of " + total_tests + ": keys");
 	names = Object.keys(proxyTest);
-	assert.equal(called, "enumerate", "Object.keys invokes 'enumerate'");
+	assert.equal(called, "enumerate", "Object.keys did not invoke 'enumerate'");
 	assert.ok(names instanceof Array);
-	assert.equal(names.length, 2, "2 property names were returned");
-	assert.equal(names[0], "first", "The first property name is 'first'");
-	assert.equal(names[1], "second", "The second property name is 'second'");
+	assert.equal(names.length, 2, "2 property names were not returned");
+	assert.equal(names[0], "first", "The first property name is not 'first'");
+	assert.equal(names[1], "second", "The second property name is not 'second'");
+	
+	sys.puts("Test 9 of " + total_tests + ": delete");
+	assert.ok((delete proxyTest.second), "Delete the property 'second' from the proxy");
+	assert.equal(called, "delete", "the delete method was not the last method called");
+	assert.ok(!Object.prototype.hasOwnProperty.call(proxyTest, "second"), "proxyTest still hasOwnProperty the property 'second'");
+	assert.ok(!("second" in proxyTest), "proxyTest still has the property 'second'");
+	
 	
 	
 	process.exit(0);
