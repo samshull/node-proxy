@@ -21,9 +21,9 @@
     "implements": [
         "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
     ],
-	"engines": [
-		"node"
-	],
+	"engines": {
+		"node" : ">=0.1.103"
+	},
     "repositories": [
         {
             "type": "git",
