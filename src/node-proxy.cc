@@ -198,6 +198,36 @@ Handle<Value> NodeProxy::ValidateProxyHandler(Local<Object> handler) {
 }
 
 /**
+ *	
+ *
+ */
+Local<Value> NodeProxy::CorrectPropertyDescriptor(Local<Object> pd) {
+	HandleScope scope;
+	Local<Value> undef;
+
+	//pd->Set(NodeProxy::value, pd->Has(NodeProxy::value) ? pd->Get(NodeProxy::value) : undef);
+	pd->Set(NodeProxy::writable, pd->Has(NodeProxy::writable) ? pd->Get(NodeProxy::writable)->ToBoolean() : True());
+	pd->Set(NodeProxy::enumerable, pd->Has(NodeProxy::enumerable) ? pd->Get(NodeProxy::enumerable)->ToBoolean() : True());
+	pd->Set(NodeProxy::configurable, pd->Has(NodeProxy::configurable) ? pd->Get(NodeProxy::configurable)->ToBoolean() : True());
+
+	if (pd->Has(NodeProxy::get)) {
+		Local<Value> getter = pd->Get(NodeProxy::get);
+		pd->Set(NodeProxy::get, getter->IsFunction() ? getter : undef);
+	} else {
+		pd->Set(NodeProxy::get, undef);
+	}
+
+	if (pd->Has(NodeProxy::set)) {
+		Local<Value> setter = pd->Get(NodeProxy::set);
+		pd->Set(NodeProxy::set, setter->IsFunction() ? setter : undef);
+	} else {
+		pd->Set(NodeProxy::set, undef);
+	}
+
+	return pd;
+}
+
+/**
  *	Used for creating a shallow copy of an object
  *
  *
@@ -709,7 +739,7 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 		Local<Object> desc = handler->Get(name)->ToObject();
 
 		if (desc->Get(NodeProxy::configurable)->BooleanValue()) {
-			return Boolean::New(handler->Set(name, args[2]));
+			return Boolean::New(handler->Set(name, CorrectPropertyDescriptor(args[2]->ToObject())));
 		}
 
 		return False();
@@ -717,7 +747,7 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 	
 	Local<Function> def = Local<Function>::Cast(handler->Get(NodeProxy::defineProperty));
 	
-	Local<Value> argv[2] = {args[1], args[2]};
+	Local<Value> argv[2] = {args[1], CorrectPropertyDescriptor(args[2]->ToObject())};
 	
 	return def->Call(obj, 2, argv)->ToBoolean();
 }
