@@ -332,15 +332,18 @@ Handle<Value> NodeProxy::IsProxy(const Arguments& args) {
 	if (args.Length() < 1) {
 		return THREXC("isProxy requires at least one (1) argument.");
 	}
-	
+
 	Local<Object> obj = args[0]->ToObject();
-	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
-	
-	if (!temp.IsEmpty() && temp->IsObject()) {
-		Handle<Value> ret = ValidateProxyHandler(temp->ToObject());
-		return Boolean::New(ret->IsBoolean() && ret->BooleanValue());
+
+	if (obj->InternalFieldCount() > 0) {
+		Local<Value> temp = obj->GetInternalField(0);
+		
+		if (!temp.IsEmpty() && temp->IsObject()) {
+			Handle<Value> ret = ValidateProxyHandler(temp->ToObject());
+			return Boolean::New(ret->IsBoolean() && ret->BooleanValue());
+		}
 	}
-	
+
 	return False();
 }
 
@@ -389,7 +392,9 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 	proxyHandler->SetHiddenValue(NodeProxy::frozen, False());
 	
 	Local<ObjectTemplate> temp = ObjectTemplate::New();
-	
+
+	temp->SetInternalFieldCount(1);
+
 	//named property handlers
 	temp->SetNamedPropertyHandler(GetNamedProperty, 
 								  SetNamedProperty, 
@@ -413,7 +418,8 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 	
 	Local<Object> instance = temp->NewInstance();
 	
-	instance->SetHiddenValue(NodeProxy::hiddenPrivate, proxyHandler);
+	instance->SetInternalField(0, proxyHandler);
+
 	
 	if (args.Length() > 1) {
 		instance->SetPrototype(args[1]);
@@ -475,21 +481,23 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 	
 	Local<FunctionTemplate> temp = FunctionTemplate::New(New, proxyHandler);
 	
-	Local<ObjectTemplate> proto = temp->PrototypeTemplate();
+	//Local<ObjectTemplate> proto = temp->PrototypeTemplate();
 	
 	Local<ObjectTemplate> instance = temp->InstanceTemplate();
 	
+	instance->SetInternalFieldCount(1);
+
 	instance->SetNamedPropertyHandler(GetNamedProperty, 
 									  SetNamedProperty,
 
 //different versions of V8 require different return types
 //0.1.97 is where the switch occurred in v8, but NODE_*_VERSION wasn't added until 0.1.100
 #ifndef NODE_MAJOR_VERSION
-								  QueryNamedProperty, 
+								      QueryNamedProperty, 
 #elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
-								  QueryNamedPropertyInteger, 
+									  QueryNamedPropertyInteger, 
 #else
-								  QueryNamedProperty, 
+									  QueryNamedProperty, 
 #endif
 
 									  DeleteNamedProperty, 
@@ -502,8 +510,8 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 	
 	Local<Function> fn = temp->GetFunction();
 		
-	fn->SetHiddenValue(NodeProxy::hiddenPrivate, proxyHandler);
-	
+	fn->SetInternalField(0, proxyHandler);
+
 	//optionally pass the name of your function attached to the ProxyHandler Object
 	if (proxyHandler->Has(NodeProxy::name) && proxyHandler->Get(NodeProxy::name)->IsString()) {
 		fn->SetName(proxyHandler->Get(NodeProxy::name)->ToString());
@@ -530,11 +538,14 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 	}
 	
 	Local<Object> obj = args[0]->ToObject();
+
+	if (obj->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("Locking functions expect first argument to be intialized by Proxy");
+	}
 	
-	Local<Value> hide = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
+	Local<Value> hide = obj->GetInternalField(0);
 	
 	if (hide.IsEmpty() || !hide->IsObject()) {
-		//return False();
 		return THR_TYPE_ERROR("Locking functions expect first argument to be intialized by Proxy");
 	}
 	
@@ -605,7 +616,7 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 	parts->SetHiddenValue(NodeProxy::trapping, False());
 	
 	//overwrite the handler, making handler available for GC
-	obj->SetHiddenValue(NodeProxy::hiddenPrivate, parts);
+	obj->SetInternalField(0, parts);
 	
 	return True();
 }
@@ -627,11 +638,14 @@ Handle<Value> NodeProxy::IsLocked(const Arguments& args) {
 	}
 	
 	Local<Object> arg = args[0]->ToObject();
+
+	if (arg->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("Locking functions expect first argument to be intialized by Proxy");
+	}
 	
-	Local<Value> hide = arg->GetHiddenValue(NodeProxy::hiddenPrivate);
+	Local<Value> hide = arg->GetInternalField(0);
 	
 	if (hide.IsEmpty() || !hide->IsObject()) {
-		//return False();
 		return THR_TYPE_ERROR("Locking functions expect first argument to be intialized by Proxy");
 	}
 	
@@ -674,7 +688,12 @@ Handle<Value> NodeProxy::GetOwnPropertyDescriptor(const Arguments& args) {
 	
 	Local<Object> obj = args[0]->ToObject();
 	Local<String> name = args[1]->ToString();
-	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
+
+	if (obj->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("getOwnPropertyDescriptor expects first argument to be intialized by Proxy");
+	}
+
+	Local<Value> temp = obj->GetInternalField(0);
 	
 	if (temp.IsEmpty() || !temp->IsObject()) {
 		return THR_TYPE_ERROR("getOwnPropertyDescriptor expects first argument to be intialized by Proxy");
@@ -718,13 +737,18 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 	}
 	
 	Local<Object> obj = args[0]->ToObject();
-	Local<String> name = args[1]->ToString();
-	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
+
+	if (obj->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("defineProperty expects first argument to be intialized by Proxy");
+	}
+
+	Local<Value> temp = obj->GetInternalField(0);
 	
 	if (temp.IsEmpty() || !temp->IsObject()) {
 		return THR_TYPE_ERROR("defineProperty expects first argument to be intialized by Proxy");
 	}
 	
+	Local<String> name = args[1]->ToString();
 	Local<Object> handler = temp->ToObject();
 	
 	if (handler->GetHiddenValue(NodeProxy::sealed)->BooleanValue()) {
@@ -772,58 +796,66 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
 	}
 	
 	Local<Object> obj = args[0]->ToObject();
-	Local<Object> props = args[1]->ToObject();
 
-	Local<Value> temp = obj->GetHiddenValue(NodeProxy::hiddenPrivate);
-	
-	if (temp.IsEmpty() || !temp->IsObject()) {
-		return THR_TYPE_ERROR("defineProperties expects first argument to be intialized by Proxy");
-	}
-	
-	Local<Object> handler = temp->ToObject();
-	
-	if (handler->GetHiddenValue(NodeProxy::sealed)->BooleanValue()) {
-		return False();
+	if (obj->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("defineProperty expects first argument to be intialized by Proxy");
 	}
 
-	Local<Object> name;
-	bool extensible = handler->GetHiddenValue(NodeProxy::extensible)->BooleanValue();
-	Local<Array> names = props->GetPropertyNames();
-	uint32_t i = 0, l = names->Length();
+	Local<Value> temp = obj->GetInternalField(0);
+	
+	if (!temp.IsEmpty() && temp->IsObject()) {
+		Local<Object> props = args[1]->ToObject();
+		Local<Object> handler = temp->ToObject();
+		
+		if (handler->GetHiddenValue(NodeProxy::sealed)->BooleanValue()) {
+			return False();
+		}
 
-	if (!handler->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+		Local<Object> name;
+		bool extensible = handler->GetHiddenValue(NodeProxy::extensible)->BooleanValue();
+		Local<Array> names = props->GetPropertyNames();
+		uint32_t i = 0, l = names->Length();
+
+		if (!handler->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+			
+			for (;i < l; ++i) {
+				
+				name = names->CloneElementAt(i);
+				
+				if (handler->Has(name->ToString()) && handler->Get(name->ToString())->IsObject()) {
+					Local<Object> tempObj = handler->Get(name->ToString())->ToObject();
+
+					if (tempObj->Get(NodeProxy::configurable)->BooleanValue()) {
+						
+						if (!handler->Set(name->ToString(), props->Get(name->ToString()))) {
+							return THREXCW(String::Concat(String::New("Unable to define property: "), name->ToString()));
+						}
+					}
+
+				} else {
+					return THREXCW(String::Concat(String::New("Unable to define property: "), name->ToString()));
+				}
+			}
+
+			return True();
+		}
+		
+		Local<Function> def = Local<Function>::Cast(handler->Get(NodeProxy::defineProperty));
+		
 		for (;i < l; ++i) {
 			name = names->CloneElementAt(i);
 			
-			if (handler->Has(name->ToString()) && handler->Get(name->ToString())->IsObject()) {
-				Local<Object> tempObj = handler->Get(name->ToString())->ToObject();
-
-				if (tempObj->Get(NodeProxy::configurable)->BooleanValue()) {
-					if (!handler->Set(name->ToString(), props->Get(name->ToString()))) {
-						return THREXCW(String::Concat(String::New("Unable to define property: "), name->ToString()));
-					}
-				}
-
-			} else {
-				return THREXCW(String::Concat(String::New("Unable to define property: "), name->ToString()));
+			if (extensible || obj->Has(name->ToString())) {
+				Local<Value> argv[2] = {name, props->Get(name->ToString())};
+				
+				def->Call(obj, 2, argv);
 			}
 		}
+
 		return True();
 	}
 	
-	Local<Function> def = Local<Function>::Cast(handler->Get(NodeProxy::defineProperty));
-	
-	for (;i < l; ++i) {
-		name = names->CloneElementAt(i);
-		
-		if (extensible || obj->Has(name->ToString())) {
-			Local<Value> argv[2] = {name, props->Get(name->ToString())};
-			
-			def->Call(obj, 2, argv);
-		}
-	}
-	
-	return True();
+	return False();
 }
 
 /**
@@ -836,14 +868,19 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
  */
 Handle<Value> NodeProxy::New(const Arguments& args) {
     HandleScope scope;
-	Local<Function> fn;
+	
+	if (args.This()->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("defineProperty expects first argument to be intialized by Proxy");
+	}
+
 	Local<Value> info, ret, 
-				 data = args.This()->GetHiddenValue(NodeProxy::hiddenPrivate);
+				 data = args.This()->GetInternalField(0);
 	
 	if (data.IsEmpty() || !data->IsObject()) {
 		return THREXC("Invalid reference to Proxy#constructor");
 	}
 	
+	Local<Function> fn;
 	Local<Object> obj = data->ToObject();
 	
 	if (args.IsConstructCall()) {
@@ -874,9 +911,9 @@ Handle<Value> NodeProxy::New(const Arguments& args) {
 		}
 		
 		return args.This();
-	} else {
-		return ret;
 	}
+
+	return ret;
 }
 
 /**
@@ -887,102 +924,107 @@ Handle<Value> NodeProxy::New(const Arguments& args) {
  */
 Handle<Value> NodeProxy::GetNamedProperty(Local<String> name, const AccessorInfo &info) {
     HandleScope scope;
-	Local<Function> fn;
+	
+	if (info.This()->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("SetNamedProperty intercepted by non-Proxy object");
+	}
+
 	Local<Value> argv[2] = {info.This(), name}, 
 				 argv1[1] = {name}, 
 				 temp, ret, undef, 
-				 data = info.This()->GetHiddenValue(NodeProxy::hiddenPrivate);
+				 data = info.This()->GetInternalField(0);
 	
-	if (data.IsEmpty() || !data->IsObject()) {
-		return undef;
-	}
-	
-	Local<Object> obj = data->ToObject();
-	
-	//if the Proxy isn't trapping, return the value set on the property descriptor
-	if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
-		if (obj->Has(name)) {
-			temp = obj->Get(name);
+	if (!data.IsEmpty() && data->IsObject()) {
+		Local<Function> fn;
+		Local<Object> obj = data->ToObject();
+		
+		//if the Proxy isn't trapping, return the value set on the property descriptor
+		if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+			if (obj->Has(name)) {
+				temp = obj->Get(name);
 
-			if (temp.IsEmpty() || !temp->IsObject()) {
-				return undef;
+				if (temp.IsEmpty() || !temp->IsObject()) {
+					return undef;
+				}
+
+				Local<Object> tempObj = temp->ToObject();
+
+				if (tempObj->Has(NodeProxy::get) && tempObj->Get(NodeProxy::get)->IsFunction()) {
+					return Local<Function>::Cast(tempObj->Get(NodeProxy::get))->Call(info.This(), 2, argv);
+				}
+
+				return tempObj->Get(NodeProxy::value);
 			}
-
-			Local<Object> tempObj = temp->ToObject();
-
-			if (tempObj->Has(NodeProxy::get) && tempObj->Get(NodeProxy::get)->IsFunction()) {
-				return Local<Function>::Cast(tempObj->Get(NodeProxy::get))->Call(info.This(), 2, argv);
-			}
-
-			return tempObj->Get(NodeProxy::value);
+			
+			return undef;
 		}
 		
-		return undef;
-	}
-	
-	if (obj->Has(NodeProxy::get)) {
-		temp = obj->Get(NodeProxy::get);
+		if (obj->Has(NodeProxy::get)) {
+			temp = obj->Get(NodeProxy::get);
+			
+			if (!temp.IsEmpty() && temp->IsFunction()) {
+				fn = Local<Function>::Cast(temp);
+				
+				ret = fn->Call(info.This(), 2, argv);
+				
+				if (ret.IsEmpty() || ret->IsUndefined()) {
+					return undef;
+				}
+				
+				return ret;
+			}
+		}
 		
-		if (!temp.IsEmpty() && temp->IsFunction()) {
+		if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
+		
+			temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
+			
 			fn = Local<Function>::Cast(temp);
 			
-			ret = fn->Call(info.This(), 2, argv);
+			Local<Value> desc = fn->Call(info.This(), 1, argv1);
 			
-			if (ret.IsEmpty() || ret->IsUndefined()) {
-				return undef;
-			}
-			
-			return ret;
-		}
-	}
-	
-	if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
-	
-		temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
-		
-		fn = Local<Function>::Cast(temp);
-		
-		Local<Value> desc = fn->Call(info.This(), 1, argv1);
-		
-		if (!desc.IsEmpty() && desc->IsObject()) {
-			Local<Object> prop = desc->ToObject();
-			
-			if (prop->Has(NodeProxy::get) && prop->Get(NodeProxy::get)->IsFunction()) {
-				temp = prop->Get(NodeProxy::get);
+			if (!desc.IsEmpty() && desc->IsObject()) {
+				Local<Object> prop = desc->ToObject();
 				
-				fn = Local<Function>::Cast(temp);
-			
-				return fn->Call(info.This(), 1, argv1);
-			
-			} else if (prop->Has(NodeProxy::value)) {
-				return prop->Get(NodeProxy::value);
-			}
-		}
-	}
-	
-	if (obj->Has(NodeProxy::getPropertyDescriptor)) {
-	
-		temp = obj->Get(NodeProxy::getPropertyDescriptor);
-		
-		fn = Local<Function>::Cast(temp);
-		
-		Local<Value> desc = fn->Call(info.This(), 1, argv1);
-		
-		if (!desc.IsEmpty() && desc->IsObject()) {
-			Local<Object> prop = desc->ToObject();
-			
-			if (prop->Has(NodeProxy::get) && prop->Get(NodeProxy::get)->IsFunction()) {
-				temp = prop->Get(NodeProxy::get);
+				if (prop->Has(NodeProxy::get) && prop->Get(NodeProxy::get)->IsFunction()) {
+					temp = prop->Get(NodeProxy::get);
+					
+					fn = Local<Function>::Cast(temp);
 				
-				fn = Local<Function>::Cast(temp);
+					return fn->Call(info.This(), 1, argv1);
+				
+				} else if (prop->Has(NodeProxy::value)) {
+					return prop->Get(NodeProxy::value);
+				}
+			}
+		}
+		
+		if (obj->Has(NodeProxy::getPropertyDescriptor)) {
+		
+			temp = obj->Get(NodeProxy::getPropertyDescriptor);
 			
-				return fn->Call(info.This(), 1, argv1);
+			fn = Local<Function>::Cast(temp);
 			
-			} else if (prop->Has(NodeProxy::value)) {
-				return prop->Get(NodeProxy::value);
+			Local<Value> desc = fn->Call(info.This(), 1, argv1);
+			
+			if (!desc.IsEmpty() && desc->IsObject()) {
+				Local<Object> prop = desc->ToObject();
+				
+				if (prop->Has(NodeProxy::get) && prop->Get(NodeProxy::get)->IsFunction()) {
+					temp = prop->Get(NodeProxy::get);
+					
+					fn = Local<Function>::Cast(temp);
+				
+					return fn->Call(info.This(), 1, argv1);
+				
+				} else if (prop->Has(NodeProxy::value)) {
+					return prop->Get(NodeProxy::value);
+				}
 			}
 		}
 	}
+	
+	
 		
 	return undef;
 }
@@ -995,130 +1037,130 @@ Handle<Value> NodeProxy::GetNamedProperty(Local<String> name, const AccessorInfo
  */
 Handle<Value> NodeProxy::SetNamedProperty(Local<String> name, Local<Value> value, const AccessorInfo &info) {
     HandleScope scope;
+	
+	if (info.This()->InternalFieldCount() < 1) {
+		return THR_TYPE_ERROR("SetNamedProperty intercepted by non-Proxy object");
+	}
+
 	Local<Function> fn;
 	Local<Value> argv2[2] = {name, value}, 
 				 undef, temp, 
-				 data = info.This()->GetHiddenValue(NodeProxy::hiddenPrivate);
+				 data = info.This()->GetInternalField(0);
 	
-	if (data.IsEmpty() || !data->IsObject()) {
-		return undef;
-		//return THREXC("Invalid reference to NodeProxy::GetNamedProperty");
-	}
+	if (!data.IsEmpty() && data->IsObject()) {
+		Local<Object> obj = data->ToObject();
 	
-	Local<Object> obj = data->ToObject();
-	
-	//if the Proxy isn't trapping, return the value set on the property descriptor
-	if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
-		if (obj->GetHiddenValue(NodeProxy::extensible)->BooleanValue() || obj->Has(name)) {
-			temp = obj->Get(name);
+		//if the Proxy isn't trapping, return the value set on the property descriptor
+		if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+			if (obj->GetHiddenValue(NodeProxy::extensible)->BooleanValue() || obj->Has(name)) {
+				temp = obj->Get(name);
 
-			if (temp.IsEmpty() || !temp->IsObject()) {
+				if (temp.IsEmpty() || !temp->IsObject()) {
+					return undef;
+				}
+
+				Local<Object> tempObj = temp->ToObject();
+
+				if (!tempObj->GetHiddenValue(NodeProxy::writable)->BooleanValue()) {
+					return THREXCW(String::Concat(String::New("In accessible property: "), name));
+				}
+
+				if (tempObj->Has(NodeProxy::set) && tempObj->Get(NodeProxy::set)->IsFunction()) {
+					Local<Function>::Cast(tempObj->Get(NodeProxy::set))->Call(info.This(), 2, argv2);
+					return value;
+				}
+
+				if (tempObj->Set(NodeProxy::value, value)) {
+					return value;
+				}
+
 				return undef;
 			}
-
-			Local<Object> tempObj = temp->ToObject();
-
-			if (!tempObj->GetHiddenValue(NodeProxy::writable)->BooleanValue()) {
-				return THREXCW(String::Concat(String::New("In accessible property: "), name));
-			}
-
-			if (tempObj->Has(NodeProxy::set) && tempObj->Get(NodeProxy::set)->IsFunction()) {
-				Local<Function>::Cast(tempObj->Get(NodeProxy::set))->Call(info.This(), 2, argv2);
-				return value;
-			}
-
-			if (tempObj->Set(NodeProxy::value, value)) {
-				return value;
-			}
-
+			
 			return undef;
-			//return Undefined();
 		}
 		
-		return undef;
-	}
-	
-	//does the ProxyHandler have a set method?
-	if (obj->Has(NodeProxy::set)) {
-		temp = obj->Get(NodeProxy::set);
-		
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
-		
-			Local<Value> argv3[3] = {info.This(), name, value};
+		//does the ProxyHandler have a set method?
+		if (obj->Has(NodeProxy::set)) {
+			temp = obj->Get(NodeProxy::set);
 			
-			fn->Call(info.This(), 3, argv3);
-			
-			return value;
-		}
-	}
-	
-	if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
-	
-		temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
-	
-		fn = Local<Function>::Cast(temp);
-
-		Local<Value> argv[1] = {name};
-	
-		Local<Value> desc = fn->Call(info.This(), 1, argv);
-	
-		if (!desc.IsEmpty() && desc->IsObject()) {
-			Local<Object> prop = desc->ToObject();
-		
-			//if the PropertyDescriptor has a set method
-			if (prop->Has(NodeProxy::set) && prop->Get(NodeProxy::set)->IsFunction()) {
-				temp = prop->Get(NodeProxy::set);
-			
+			if (!temp.IsEmpty() && temp->IsFunction()) {
 				fn = Local<Function>::Cast(temp);
 			
-				fn->Call(info.This(), 2, argv2);
-			
+				Local<Value> argv3[3] = {info.This(), name, value};
+				
+				fn->Call(info.This(), 3, argv3);
+				
 				return value;
+			}
+		}
+		
+		if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
+		
+			temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
+		
+			fn = Local<Function>::Cast(temp);
+
+			Local<Value> argv[1] = {name};
+		
+			Local<Value> desc = fn->Call(info.This(), 1, argv);
+		
+			if (!desc.IsEmpty() && desc->IsObject()) {
+				Local<Object> prop = desc->ToObject();
 			
-			//otherwise change value if writable
-			} else if (prop->Has(NodeProxy::writable) && prop->Get(NodeProxy::writable)->BooleanValue()) {
-				if (prop->Set(NodeProxy::value, value)) {
+				//if the PropertyDescriptor has a set method
+				if (prop->Has(NodeProxy::set) && prop->Get(NodeProxy::set)->IsFunction()) {
+					temp = prop->Get(NodeProxy::set);
+				
+					fn = Local<Function>::Cast(temp);
+				
+					fn->Call(info.This(), 2, argv2);
+				
 					return value;
+				
+				//otherwise change value if writable
+				} else if (prop->Has(NodeProxy::writable) && prop->Get(NodeProxy::writable)->BooleanValue()) {
+					if (prop->Set(NodeProxy::value, value)) {
+						return value;
+					}
 				}
 			}
 		}
-	}
-	
-	if (obj->Has(NodeProxy::getPropertyDescriptor)) {
-	
-		temp = obj->Get(NodeProxy::getPropertyDescriptor);
-	
-		fn = Local<Function>::Cast(temp);
-
-		Local<Value> argv[1] = {name};
-	
-		Local<Value> desc = fn->Call(info.This(), 1, argv);
-	
-		if (!desc.IsEmpty() && desc->IsObject()) {
-			Local<Object> prop = desc->ToObject();
 		
-			//if the PropertyDescriptor has a set method
-			if (prop->Has(NodeProxy::set) && prop->Get(NodeProxy::set)->IsFunction()) {
-				temp = prop->Get(NodeProxy::set);
+		if (obj->Has(NodeProxy::getPropertyDescriptor)) {
+		
+			temp = obj->Get(NodeProxy::getPropertyDescriptor);
+		
+			fn = Local<Function>::Cast(temp);
+
+			Local<Value> argv[1] = {name};
+		
+			Local<Value> desc = fn->Call(info.This(), 1, argv);
+		
+			if (!desc.IsEmpty() && desc->IsObject()) {
+				Local<Object> prop = desc->ToObject();
 			
-				fn = Local<Function>::Cast(temp);
-			
-				fn->Call(info.This(), 2, argv2);
-			
-				return value;
-			
-			//otherwise change value if writable
-			} else if (prop->Has(NodeProxy::writable) && prop->Get(NodeProxy::writable)->BooleanValue()) {
-				if (prop->Set(NodeProxy::value, value)) {
+				//if the PropertyDescriptor has a set method
+				if (prop->Has(NodeProxy::set) && prop->Get(NodeProxy::set)->IsFunction()) {
+					temp = prop->Get(NodeProxy::set);
+				
+					fn = Local<Function>::Cast(temp);
+				
+					fn->Call(info.This(), 2, argv2);
+				
 					return value;
+				
+				//otherwise change value if writable
+				} else if (prop->Has(NodeProxy::writable) && prop->Get(NodeProxy::writable)->BooleanValue()) {
+					if (prop->Set(NodeProxy::value, value)) {
+						return value;
+					}
 				}
 			}
 		}
 	}
 	
 	return undef;
-	//return Undefined();
 }
 
 /**
@@ -1129,74 +1171,75 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name, Local<Value> value
  */
 Handle<Boolean> NodeProxy::QueryNamedProperty(Local<String> name, const AccessorInfo &info) {
     HandleScope scope;
-	Local<Value> argv[1] = {name}, temp, data = info.This()->GetHiddenValue(NodeProxy::hiddenPrivate);
-	Local<Function> fn;
 	
-	if (data.IsEmpty() || !data->IsObject()) {
-		return False();
-	}
+	if (info.This()->InternalFieldCount() < 1) {
+		Local<Value> argv[1] = {name}, temp, data = info.This()->GetInternalField(0);
+		Local<Function> fn;
+		
+		if (!data.IsEmpty() && data->IsObject()) {
+			Local<Object> obj = data->ToObject();
 	
-	Local<Object> obj = data->ToObject();
-	
-	//if the Proxy isn't trapping, return the value set on the property descriptor
-	if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
-		return Boolean::New(obj->Has(name));
-	}
+			//if the Proxy isn't trapping, return the value set on the property descriptor
+			if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+				return Boolean::New(obj->Has(name));
+			}
 
-	if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
-		temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
-		
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
-		
-			temp = fn->Call(info.This(), 1, argv);
-			
-			if (temp->IsBoolean()) {
-				return temp->ToBoolean();
+			if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
+				temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
+				
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
+				
+					temp = fn->Call(info.This(), 1, argv);
+					
+					if (temp->IsBoolean()) {
+						return temp->ToBoolean();
+					}
+				}
 			}
-		}
-	}
 
-	if (obj->Has(NodeProxy::getPropertyDescriptor)) {
-		temp = obj->Get(NodeProxy::getPropertyDescriptor);
-		
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
-		
-			temp = fn->Call(info.This(), 1, argv);
-			
-			if (temp->IsBoolean()) {
-				return temp->ToBoolean();
+			if (obj->Has(NodeProxy::getPropertyDescriptor)) {
+				temp = obj->Get(NodeProxy::getPropertyDescriptor);
+				
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
+				
+					temp = fn->Call(info.This(), 1, argv);
+					
+					if (temp->IsBoolean()) {
+						return temp->ToBoolean();
+					}
+				}
 			}
-		}
-	}
-	
-	//check the ProxyHandler for the has method
-	if (obj->Has(NodeProxy::hasOwn)) {
-		temp = obj->Get(NodeProxy::hasOwn);
-		
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
-		
-			temp = fn->Call(info.This(), 1, argv);
 			
-			if (temp->IsBoolean()) {
-				return temp->ToBoolean();
+			//check the ProxyHandler for the has method
+			if (obj->Has(NodeProxy::hasOwn)) {
+				temp = obj->Get(NodeProxy::hasOwn);
+				
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
+				
+					temp = fn->Call(info.This(), 1, argv);
+					
+					if (temp->IsBoolean()) {
+						return temp->ToBoolean();
+					}
+				}
 			}
-		}
-	}
-	
-	//check the ProxyHandler for the has method
-	if (obj->Has(NodeProxy::has)) {
-		temp = obj->Get(NodeProxy::has);
-		
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
-		
-			temp = fn->Call(info.This(), 1, argv);
 			
-			if (temp->IsBoolean()) {
-				return temp->ToBoolean();
+			//check the ProxyHandler for the has method
+			if (obj->Has(NodeProxy::has)) {
+				temp = obj->Get(NodeProxy::has);
+				
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
+				
+					temp = fn->Call(info.This(), 1, argv);
+					
+					if (temp->IsBoolean()) {
+						return temp->ToBoolean();
+					}
+				}
 			}
 		}
 	}
@@ -1212,85 +1255,91 @@ Handle<Boolean> NodeProxy::QueryNamedProperty(Local<String> name, const Accessor
  */
 Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name, const AccessorInfo &info) {
     HandleScope scope;
-	Local<Value> temp, data = info.This()->GetHiddenValue(NodeProxy::hiddenPrivate);
-	Local<Function> fn;
 	Local<Integer> DoesntHavePropertyResponse, HasPropertyResponse = Integer::New(None);
-
-	if (data.IsEmpty() || !data->IsObject()) {
-		return DoesntHavePropertyResponse;
-	}
-
-	Local<Object> obj = data->ToObject();
-
-	//if the Proxy isn't trapping, return the value set on the property descriptor
-	if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
-		if(obj->Has(name)) {
-			Local<Value> pd = obj->Get(name);
-			if (pd->IsObject()) {
-				return GetPropertyAttributeFromPropertyDescriptor(pd->ToObject());
-			}
-			return HasPropertyResponse;
-		}
-		
-		return DoesntHavePropertyResponse;
-	}
-
-	Local<Value> argv[1] = {name};
-
-	if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
-		temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
-
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
-
-			temp = fn->Call(info.This(), 1, argv);
-
-			if (!temp.IsEmpty() && temp->IsObject()) {
-				return GetPropertyAttributeFromPropertyDescriptor(temp->ToObject());
-			}
-		}
-	}
 	
-	if (obj->Has(NodeProxy::getPropertyDescriptor)) {
-		temp = obj->Get(NodeProxy::getPropertyDescriptor);
+	if (info.This()->InternalFieldCount() > 0) {
+		Local<Value> temp, data = info.This()->GetInternalField(0);
+		Local<Function> fn;
 
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
+		if (!data.IsEmpty() && data->IsObject()) {
+			Local<Object> obj = data->ToObject();
 
-			temp = fn->Call(info.This(), 1, argv);
+			//if the Proxy isn't trapping, return the value set on the property descriptor
+			if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+				
+				if(obj->Has(name)) {
+					
+					Local<Value> pd = obj->Get(name);
+					
+					if (pd->IsObject()) {
+						return GetPropertyAttributeFromPropertyDescriptor(pd->ToObject());
+					}
 
-			if (!temp.IsEmpty() && temp->IsObject()) {
-				return GetPropertyAttributeFromPropertyDescriptor(temp->ToObject());
-			} else if (temp->IsUndefined()) {
+					return HasPropertyResponse;
+				}
+				
 				return DoesntHavePropertyResponse;
 			}
-		}
-	}
 
-	if (obj->Has(NodeProxy::hasOwn)) {
-		temp = obj->Get(NodeProxy::hasOwn);
+			Local<Value> argv[1] = {name};
 
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
+			if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
+				temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
 
-			temp = fn->Call(info.This(), 1, argv);
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
 
-			if (temp->IsBoolean()) {
-				return HasPropertyResponse;
+					temp = fn->Call(info.This(), 1, argv);
+
+					if (!temp.IsEmpty() && temp->IsObject()) {
+						return GetPropertyAttributeFromPropertyDescriptor(temp->ToObject());
+					}
+				}
 			}
-		}
-	}
-	
-	if (obj->Has(NodeProxy::has)) {
-		temp = obj->Get(NodeProxy::has);
+			
+			if (obj->Has(NodeProxy::getPropertyDescriptor)) {
+				temp = obj->Get(NodeProxy::getPropertyDescriptor);
 
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			fn = Local<Function>::Cast(temp);
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
 
-			temp = fn->Call(info.This(), 1, argv);
+					temp = fn->Call(info.This(), 1, argv);
 
-			if (temp->IsBoolean()) {
-				return HasPropertyResponse;
+					if (!temp.IsEmpty() && temp->IsObject()) {
+						return GetPropertyAttributeFromPropertyDescriptor(temp->ToObject());
+					
+					} else if (temp->IsUndefined()) {
+						return DoesntHavePropertyResponse;
+					}
+				}
+			}
+
+			if (obj->Has(NodeProxy::hasOwn)) {
+				temp = obj->Get(NodeProxy::hasOwn);
+
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
+
+					temp = fn->Call(info.This(), 1, argv);
+
+					if (temp->IsBoolean()) {
+						return HasPropertyResponse;
+					}
+				}
+			}
+			
+			if (obj->Has(NodeProxy::has)) {
+				temp = obj->Get(NodeProxy::has);
+
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					fn = Local<Function>::Cast(temp);
+
+					temp = fn->Call(info.This(), 1, argv);
+
+					if (temp->IsBoolean()) {
+						return HasPropertyResponse;
+					}
+				}
 			}
 		}
 	}
@@ -1304,6 +1353,8 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name, const A
  *
  */
 Handle<Integer> NodeProxy::GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd) {
+	HandleScope scope;
+
 	if (pd->Has(NodeProxy::configurable) && !pd->Get(NodeProxy::configurable)->BooleanValue()){
 		return Integer::New(DontDelete);
 	
@@ -1325,46 +1376,46 @@ Handle<Integer> NodeProxy::GetPropertyAttributeFromPropertyDescriptor(Local<Obje
  */
 Handle<Boolean> NodeProxy::DeleteNamedProperty(Local<String> name, const AccessorInfo &info) {
     HandleScope scope;
-	Local<Value> temp, data = info.This()->GetHiddenValue(NodeProxy::hiddenPrivate);
 	
-	if (data.IsEmpty() || !data->IsObject()) {
-		return False();
-	}
+	if (info.This()->InternalFieldCount() > 0) {
+		Local<Value> temp, data = info.This()->GetInternalField(0);
 	
-	Local<Object> obj = data->ToObject();
-	
-	//if the Proxy isn't trapping, return the value set on the property descriptor
-	if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
-		if (obj->GetHiddenValue(NodeProxy::frozen)->BooleanValue()) {
-			return False();
-		}
-		
-		if (obj->Has(name)) {
-			temp = obj->Get(name);
-			if (temp->IsObject()) {
-				Local<Object> tempObj = temp->ToObject();
+		if (!data.IsEmpty() && data->IsObject()) {
+			Local<Object> obj = data->ToObject();
+			
+			//if the Proxy isn't trapping, return the value set on the property descriptor
+			if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+				
+				if (!obj->GetHiddenValue(NodeProxy::frozen)->BooleanValue()) {
+					if (obj->Has(name)) {
+						temp = obj->Get(name);
+						if (temp->IsObject()) {
+							Local<Object> tempObj = temp->ToObject();
 
-				if (tempObj->Has(NodeProxy::configurable) && tempObj->Get(NodeProxy::configurable)->BooleanValue()) {
-					return Boolean::New(obj->Delete(name));
+							if (tempObj->Has(NodeProxy::configurable) && tempObj->Get(NodeProxy::configurable)->BooleanValue()) {
+								return Boolean::New(obj->Delete(name));
+							}
+						}
+					}
+				}
+
+				return False();
+			}
+			
+			if (obj->Has(NodeProxy::delete_)) {
+				temp = obj->Get(NodeProxy::delete_);
+				
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					Local<Function> fn = Local<Function>::Cast(temp);
+					Local<Value> argv[1] = {name};
+					
+					return fn->Call(info.This(), 1, argv)->ToBoolean();
 				}
 			}
 		}
+	}
 
-		return False();
-	}
 	
-	if (obj->Has(NodeProxy::delete_)) {
-		temp = obj->Get(NodeProxy::delete_);
-		
-		if (temp.IsEmpty() || !temp->IsFunction()) {
-			return False();
-		}
-		
-		Local<Function> fn = Local<Function>::Cast(temp);
-		Local<Value> argv[1] = {name};
-		
-		return fn->Call(info.This(), 1, argv)->ToBoolean();
-	}
 	
 	return False();
 }
@@ -1375,32 +1426,33 @@ Handle<Boolean> NodeProxy::DeleteNamedProperty(Local<String> name, const Accesso
  *
  *
  */
-Handle<Array> NodeProxy::EnumerateNamedProperties(const AccessorInfo  &info) {
+Handle<Array> NodeProxy::EnumerateNamedProperties(const AccessorInfo &info) {
     HandleScope scope;
-	Local<Value> data = info.This()->GetHiddenValue(NodeProxy::hiddenPrivate);
 	
-	if (data.IsEmpty() || !data->IsObject()) {
-		return Array::New();
-	}
+	if (info.This()->InternalFieldCount() > 0) {
+		Local<Value> data = info.This()->GetInternalField(0);
 	
-	Local<Object> obj = data->ToObject();
+		if (!data.IsEmpty() && data->IsObject()) {
+			Local<Object> obj = data->ToObject();
 
-	//if the Proxy isn't trapping, return the value set on the property descriptor
-	if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
-		return obj->GetPropertyNames();
-	}
-	
-	if (obj->Has(NodeProxy::enumerate)) {
-		Local<Value> temp = obj->Get(NodeProxy::enumerate);
-
-		if (!temp.IsEmpty() && temp->IsFunction()) {
-			Local<Function> fn = Local<Function>::Cast(temp);
-		
-			Local<Value> argv[0];
-			temp = fn->Call(info.This(), 0, argv);
+			//if the Proxy isn't trapping, return the value set on the property descriptor
+			if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
+				return obj->GetPropertyNames();
+			}
 			
-			if (temp->IsArray()) {
-				return Local<Array>::Cast(temp->ToObject());
+			if (obj->Has(NodeProxy::enumerate)) {
+				Local<Value> temp = obj->Get(NodeProxy::enumerate);
+
+				if (!temp.IsEmpty() && temp->IsFunction()) {
+					Local<Function> fn = Local<Function>::Cast(temp);
+				
+					Local<Value> argv[0];
+					temp = fn->Call(info.This(), 0, argv);
+					
+					if (temp->IsArray()) {
+						return Local<Array>::Cast(temp->ToObject());
+					}
+				}
 			}
 		}
 	}
@@ -1456,7 +1508,7 @@ Handle<Integer> NodeProxy::QueryIndexedPropertyInteger(uint32_t index, const Acc
  *
  *
  */
-Handle<Boolean> NodeProxy::DeleteIndexedProperty(uint32_t index, const AccessorInfo  &info) {
+Handle<Boolean> NodeProxy::DeleteIndexedProperty(uint32_t index, const AccessorInfo &info) {
     HandleScope scope;
 
 	return DeleteNamedProperty(Local<String>::Cast(Integer::NewFromUnsigned(index)), info);
