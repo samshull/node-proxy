@@ -1,5 +1,5 @@
 /**
- *    
+ *   
  *
  *
  *    @author Sam Shull <http://samshull.blogspot.com/>
@@ -14,10 +14,10 @@
  *    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *    copies of the Software, and to permit persons to whom the Software is
  *    furnished to do so, subject to the following conditions:
- *    
+ *   
  *    The above copyright notice and this permission notice shall be included in
  *    all copies or substantial portions of the Software.
- *    
+ *   
  *    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,137 +38,117 @@
 #include <node.h>
 #include <node_version.h>
 
-//#include <stdlib.h>
-//#include <string.h>
-//#include <unistd.h>
+#include <String>
 
-#include <string>
-
-
-// Only for fixing some cpplint.py errors:
-// Lines should be <= 80 characters long
-// [whitespace/line_length] [2]
-// Lines should very rarely be longer than 100 characters
-// [whitespace/line_length] [4]
-#define THREXC(str) ThrowException(Exception::Error(String::New(str)))
 #define THREXCW(str) ThrowException(Exception::Error(str))
-#define THR_TYPE_ERROR(str) ThrowException(Exception::TypeError(String::New(str)))
-#define PROXY_NODE_PSYMBOL(s) Persistent<String>::New(String::NewSymbol(s))
+#define THREXC(str) THREXCW(String::New(str))
+#define THR_TYPE_ERROR(str) \
+    ThrowException(Exception::TypeError(String::New(str)))
+#define PROXY_NODE_PSYMBOL(s) \
+    Persistent<String>::New(String::NewSymbol(s))
 
-//had to redefine NODE_VERSION_AT_LEAST here because of missing parenthesis
+// had to redefine NODE_VERSION_AT_LEAST here because of missing parenthesis
 #define PROXY_NODE_VERSION_AT_LEAST(major, minor, patch) \
-                              ((  (major) < NODE_MAJOR_VERSION) \
-                                || ((major) == NODE_MAJOR_VERSION && (minor) < NODE_MINOR_VERSION) \
-                                || ((major) == NODE_MAJOR_VERSION && (minor) == NODE_MINOR_VERSION && (patch) <= NODE_PATCH_VERSION))
+    (((major) < NODE_MAJOR_VERSION) \
+      || ((major) == NODE_MAJOR_VERSION && (minor) < NODE_MINOR_VERSION) \
+      || ((major) == NODE_MAJOR_VERSION && (minor) == NODE_MINOR_VERSION && \
+      (patch) <= NODE_PATCH_VERSION))
 
-using namespace std;
-using namespace v8;
+// using namespace v8;
+namespace v8 {
 
 class NodeProxy {
   public:
-	static Persistent<String> getOwnPropertyDescriptor;
-	static Persistent<String> getPropertyDescriptor;
-	static Persistent<String> defineProperty;
-	static Persistent<String> getOwnPropertyNames;
-	static Persistent<String> delete_;
-	static Persistent<String> enumerate;
-	static Persistent<String> fix;
-	
-	static Persistent<String> get;
-	static Persistent<String> set;
-	static Persistent<String> has;
-	static Persistent<String> hasOwn;
-	static Persistent<String> enumerateOwn;
-	
-	static Persistent<String> callTrap;
-	static Persistent<String> constructorTrap;
-	
-	static Persistent<String> value;
-	static Persistent<String> writable;
-	static Persistent<String> enumerable;
-	static Persistent<String> configurable;
-	
-	static Persistent<String> name;
-	
-	static Persistent<String> trapping;
-	static Persistent<String> sealed;
-	static Persistent<String> frozen;
-	static Persistent<String> extensible;
-	
-	static Persistent<String> seal;
-	static Persistent<String> freeze;
-	static Persistent<String> preventExtensions;
-	
-	static Persistent<String> isTrapping;
-	static Persistent<String> isSealed;
-	static Persistent<String> isFrozen;
-	static Persistent<String> isExtensible;
-	static Persistent<String> isProxy;
-	
-	static Persistent<String> hidden;
-	static Persistent<String> hiddenPrivate;
-
+    static Persistent<String> getOwnPropertyDescriptor;
+    static Persistent<String> getPropertyDescriptor;
+    static Persistent<String> defineProperty;
+    static Persistent<String> getOwnPropertyNames;
+    static Persistent<String> delete_;
+    static Persistent<String> enumerate;
+    static Persistent<String> fix;
+    static Persistent<String> get;
+    static Persistent<String> set;
+    static Persistent<String> has;
+    static Persistent<String> hasOwn;
+    static Persistent<String> enumerateOwn;
+    static Persistent<String> callTrap;
+    static Persistent<String> constructorTrap;
+    static Persistent<String> value;
+    static Persistent<String> writable;
+    static Persistent<String> enumerable;
+    static Persistent<String> configurable;
+    static Persistent<String> name;
+    static Persistent<String> trapping;
+    static Persistent<String> sealed;
+    static Persistent<String> frozen;
+    static Persistent<String> extensible;
+    static Persistent<String> seal;
+    static Persistent<String> freeze;
+    static Persistent<String> preventExtensions;
+    static Persistent<String> isTrapping;
+    static Persistent<String> isSealed;
+    static Persistent<String> isFrozen;
+    static Persistent<String> isExtensible;
+    static Persistent<String> isProxy;
+    static Persistent<String> hidden;
+    static Persistent<String> hiddenPrivate;
     static void Init(Handle<Object> target);
 
-protected:
-
+  protected:
     NodeProxy();
-
     ~NodeProxy();
-
-	static Handle<Integer> GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd);
-
-	static Local<Value> CorrectPropertyDescriptor(Local<Object> pd);
-	
-	static Handle<Value> ValidateProxyHandler(Local<Object> handler);
-	
-	static Handle<Value> Clone(const Arguments& args);
-	
-	static Handle<Value> Hidden(const Arguments& args);
-	
-	static Handle<Value> Create(const Arguments& args);
-	
-	static Handle<Value> SetPrototype(const Arguments& args);
-	
-	static Handle<Value> CreateFunction(const Arguments& args);
-	
-	static Handle<Value> Freeze(const Arguments& args);
-	
-	static Handle<Value> IsLocked(const Arguments& args);
-	
-	static Handle<Value> IsProxy(const Arguments& args);
-	
-	static Handle<Value> GetOwnPropertyDescriptor(const Arguments& args);
-	
-	static Handle<Value> DefineProperty(const Arguments& args);
-	
-	static Handle<Value> DefineProperties(const Arguments& args);
-	
+    static Handle<Integer>
+        GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd);
+    static Local<Value> CorrectPropertyDescriptor(Local<Object> pd);
+    static Handle<Value> ValidateProxyHandler(Local<Object> handler);
+    static Handle<Value> Clone(const Arguments& args);
+    static Handle<Value> Hidden(const Arguments& args);
+    static Handle<Value> Create(const Arguments& args);
+    static Handle<Value> SetPrototype(const Arguments& args);
+    static Handle<Value> CreateFunction(const Arguments& args);
+    static Handle<Value> Freeze(const Arguments& args);
+    static Handle<Value> IsLocked(const Arguments& args);
+    static Handle<Value> IsProxy(const Arguments& args);
+    static Handle<Value> GetOwnPropertyDescriptor(const Arguments& args);
+    static Handle<Value> DefineProperty(const Arguments& args);
+    static Handle<Value> DefineProperties(const Arguments& args);
     static Handle<Value> New(const Arguments& args);
-
-	static Handle<Value> GetNamedProperty(Local<String> name, const AccessorInfo &info);
-
-	static Handle<Value> SetNamedProperty(Local<String> name, Local<Value> value, const AccessorInfo &info);
-
-	static Handle<Boolean> QueryNamedProperty(Local<String> name, const AccessorInfo &info);
-
-	static Handle<Integer> QueryNamedPropertyInteger(Local<String> name, const AccessorInfo &info);
-
-	static Handle<Boolean> DeleteNamedProperty(Local<String> name, const AccessorInfo &info);
-
-	static Handle<Array> EnumerateNamedProperties(const AccessorInfo  &info);
-
-	static Handle<Value> GetIndexedProperty(uint32_t index, const AccessorInfo &info);
-
-	static Handle<Value> SetIndexedProperty(uint32_t index, Local<Value> value, const AccessorInfo &info);
-
-	static Handle<Boolean> QueryIndexedProperty(uint32_t index, const AccessorInfo &info);
-
-	static Handle<Integer> QueryIndexedPropertyInteger(uint32_t index, const AccessorInfo &info);
-
-	static Handle<Boolean> DeleteIndexedProperty(uint32_t index, const AccessorInfo  &info);
+    static Handle<Value>
+        GetNamedProperty(Local<String> name, const AccessorInfo &info);
+    static Handle<Value>
+        SetNamedProperty(Local<String> name,
+                         Local<Value> value,
+                         const AccessorInfo &info);
+    static Handle<Boolean>
+        QueryNamedProperty(Local<String> name,
+                           const AccessorInfo &info);
+    static Handle<Integer>
+        QueryNamedPropertyInteger(Local<String> name,
+                                  const AccessorInfo &info);
+    static Handle<Boolean>
+        DeleteNamedProperty(Local<String> name,
+                            const AccessorInfo &info);
+    static Handle<Array>
+        EnumerateNamedProperties(const AccessorInfo  &info);
+    static Handle<Value>
+        GetIndexedProperty(uint32_t index,
+                           const AccessorInfo &info);
+    static Handle<Value>
+        SetIndexedProperty(uint32_t index,
+                           Local<Value> value,
+                           const AccessorInfo &info);
+    static Handle<Boolean>
+        QueryIndexedProperty(uint32_t index,
+                             const AccessorInfo &info);
+    static Handle<Integer>
+        QueryIndexedPropertyInteger(uint32_t index,
+                                    const AccessorInfo &info);
+    static Handle<Boolean>
+        DeleteIndexedProperty(uint32_t index,
+                              const AccessorInfo &info);
 };
+}
 
-extern "C" void init(Handle<Object> target);
+extern "C" void init(v8::Handle<v8::Object> target);
 
 #endif // NODE_CLASSTEMPLATE_H // NOLINT
