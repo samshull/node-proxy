@@ -75,6 +75,7 @@ Persistent<String> NodeProxy::hiddenPrivate;
  */
 NodeProxy::NodeProxy() {
 }
+
 /**
  *
  *
@@ -83,6 +84,7 @@ NodeProxy::NodeProxy() {
  */
 NodeProxy::~NodeProxy() {
 }
+
 /**
  *    Validate a ProxyHandler Object for compliance with NodeProxy
  *
@@ -194,6 +196,7 @@ Handle<Value> NodeProxy::ValidateProxyHandler(Local<Object> handler) {
     }
     return True();
 }
+
 /**
  *
  *
@@ -238,6 +241,7 @@ Local<Value> NodeProxy::CorrectPropertyDescriptor(Local<Object> pd) {
     }
     return pd;
 }
+
 /**
  *    Used for creating a shallow copy of an object
  *
@@ -285,6 +289,7 @@ Handle<Value> NodeProxy::Clone(const Arguments& args) {
 
     return THREXC("clone cannot determine the type of the argument.");
 }
+
 /**
  *    Set or Retrieve the value of a hidden
  *    property on a given object
@@ -321,6 +326,7 @@ Handle<Value> NodeProxy::Hidden(const Arguments& args) {
                                                    args[1]->ToString()),
                 args[2]));
 }
+
 /**
  *    Set the prototype of an object
  *
@@ -337,6 +343,7 @@ Handle<Value> NodeProxy::SetPrototype(const Arguments& args) {
     }
     return Boolean::New(args[0]->ToObject()->SetPrototype(args[1]));
 }
+
 /**
  *    Determine if an Object was created by Proxy
  *
@@ -363,6 +370,7 @@ Handle<Value> NodeProxy::IsProxy(const Arguments& args) {
 
     return False();
 }
+
 /**
  *    Create an object that has ProxyHandler intercepts attached and
  *    optionally implements the prototype of another object
@@ -445,6 +453,7 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 
     return instance;
 }
+
 /**
  *    Create a function that has ProxyHandler intercepts attached and
  *    sets a call trap function for invokation as well as an optional
@@ -539,6 +548,7 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
     }
     return fn;
 }
+
 /**
  *    Used as a handler for freeze, seal, and preventExtensions
  *    to lock the state of a Proxy created object
@@ -614,6 +624,7 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
     // Harmony Proxy handling of fix
     Local<Function> fix = Local<Function>::Cast(handler->Get(NodeProxy::fix));
     Local<Value> argv[0];
+
     Local<Value> pieces = fix->Call(args[0]->ToObject(), 0, argv);
 
     if (pieces.IsEmpty() || !pieces->IsObject()) {
@@ -643,6 +654,7 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 
     return True();
 }
+
 /**
  *    Used as a handler for determining isTrapped,
  *    isFrozen, isSealed, and isExtensible
@@ -694,6 +706,7 @@ Handle<Value> NodeProxy::IsLocked(const Arguments& args) {
 
     return False();
 }
+
 /**
  *    Part of ECMAScript 5, but only for use on
  *    Objects and Functions created by Proxy
@@ -744,6 +757,7 @@ Handle<Value> NodeProxy::GetOwnPropertyDescriptor(const Arguments& args) {
     Local<Value> argv[1] = {args[1]};
     return getOwn->Call(obj, 1, argv);
 }
+
 /**
  *    Part of ECMAScript 5, but only for use on
  *    Objects and Functions created by Proxy
@@ -815,6 +829,7 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 
     return def->Call(obj, 2, argv)->ToBoolean();
 }
+
 /**
  *    Part of ECMAScript 5, but only for use on
  *    Objects and Functions created by Proxy
@@ -890,18 +905,24 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
         Local<Function> def =
             Local<Function>::Cast(handler->Get(NodeProxy::defineProperty));
 
+        TryCatch firstTry;
         for (;i < l; ++i) {
             name = names->CloneElementAt(i);
 
             if (extensible || obj->Has(name->ToString())) {
                 Local<Value> argv[2] = {name, props->Get(name->ToString())};
                 def->Call(obj, 2, argv);
+
+                if (firstTry.HasCaught()) {
+                    return firstTry.ReThrow();
+                }
             }
         }
         return True();
     }
     return False();
 }
+
 /**
  *    Function used for a constructor and invocation
  *    handler of a Proxy created function
@@ -959,6 +980,7 @@ Handle<Value> NodeProxy::New(const Arguments& args) {
     }
     return ret;
 }
+
 /**
  *    Invoked for accessing the named properties of an object
  *
@@ -992,25 +1014,37 @@ Handle<Value> NodeProxy::GetNamedProperty(Local<String> name,
                 if (temp.IsEmpty() || !temp->IsObject()) {
                     return undef;
                 }
+
                 Local<Object> tempObj = temp->ToObject();
 
-                if (tempObj->Has(NodeProxy::get) &&
-                    tempObj->Get(NodeProxy::get)->IsFunction()) {
-                    return Local<Function>::Cast(
-                               tempObj->Get(NodeProxy::get))->Call(
-                                               info.This(), 2, argv);
+                if (tempObj->Has(NodeProxy::get)) {
+                    Local<Value> get = tempObj->Get(NodeProxy::get);
+
+                    if (get->IsFunction()) {
+                        Local<Function> fn =
+                            Local<Function>::Cast(get);
+
+                        return fn->Call(info.This(), 2, argv);
+                    }
                 }
                 return tempObj->Get(NodeProxy::value);
             }
             return undef;
         }
 
+        TryCatch firstTry;
+
         if (obj->Has(NodeProxy::get)) {
             temp = obj->Get(NodeProxy::get);
 
             if (!temp.IsEmpty() && temp->IsFunction()) {
                 fn = Local<Function>::Cast(temp);
+
                 ret = fn->Call(info.This(), 2, argv);
+
+                if (firstTry.HasCaught()) {
+                    return firstTry.ReThrow();
+                }
 
                 if (ret.IsEmpty() || ret->IsUndefined()) {
                     return undef;
@@ -1023,6 +1057,10 @@ Handle<Value> NodeProxy::GetNamedProperty(Local<String> name,
             temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
             fn = Local<Function>::Cast(temp);
             Local<Value> desc = fn->Call(info.This(), 1, argv1);
+
+            if (firstTry.HasCaught()) {
+                return firstTry.ReThrow();
+            }
 
             if (!desc.IsEmpty() && desc->IsObject()) {
                 Local<Object> prop = desc->ToObject();
@@ -1043,6 +1081,10 @@ Handle<Value> NodeProxy::GetNamedProperty(Local<String> name,
             fn = Local<Function>::Cast(temp);
             Local<Value> desc = fn->Call(info.This(), 1, argv1);
 
+            if (firstTry.HasCaught()) {
+                return firstTry.ReThrow();
+            }
+
             if (!desc.IsEmpty() && desc->IsObject()) {
                 Local<Object> prop = desc->ToObject();
 
@@ -1061,6 +1103,7 @@ Handle<Value> NodeProxy::GetNamedProperty(Local<String> name,
     }
     return undef;
 }
+
 /**
  *    Invoked for setting the named properties of an object
  *
@@ -1084,7 +1127,7 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
 
     if (!data.IsEmpty() && data->IsObject()) {
         Local<Object> obj = data->ToObject();
-
+        TryCatch firstTry;
         // if the Proxy isn't trapping, return the
         // value set on the property descriptor
         if (!obj->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
@@ -1108,13 +1151,19 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
                                           name));
                 }
 
-                if (tempObj->Has(NodeProxy::set) &&
-                    tempObj->Get(NodeProxy::set)->IsFunction()
-                ) {
-                    Local<Function>::Cast(
-                                 tempObj->Get(NodeProxy::set))->Call(
-                                                info.This(), 2, argv2);
-                    return value;
+                if (tempObj->Has(NodeProxy::set)) {
+                    Local<Value> set = tempObj->Get(NodeProxy::set);
+
+                    if (set->IsFunction()) {
+                        Local<Function> fn = Local<Function>::Cast(set);
+                        fn->Call(info.This(), 2, argv2);
+
+                        if (firstTry.HasCaught()) {
+                            return firstTry.ReThrow();
+                        }
+
+                        return value;
+                    }
                 }
 
                 if (tempObj->Set(NodeProxy::value, value)) {
@@ -1133,6 +1182,11 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
                 fn = Local<Function>::Cast(temp);
                 Local<Value> argv3[3] = {info.This(), name, value};
                 fn->Call(info.This(), 3, argv3);
+
+                if (firstTry.HasCaught()) {
+                    return firstTry.ReThrow();
+                }
+
                 return value;
             }
         }
@@ -1143,6 +1197,10 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
             Local<Value> argv[1] = {name};
             Local<Value> desc = fn->Call(info.This(), 1, argv);
 
+            if (firstTry.HasCaught()) {
+                return firstTry.ReThrow();
+            }
+
             if (!desc.IsEmpty() && desc->IsObject()) {
                 Local<Object> prop = desc->ToObject();
 
@@ -1152,6 +1210,11 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
                     temp = prop->Get(NodeProxy::set);
                     fn = Local<Function>::Cast(temp);
                     fn->Call(info.This(), 2, argv2);
+
+                    if (firstTry.HasCaught()) {
+                        return firstTry.ReThrow();
+                    }
+
                     return value;
 
                 // otherwise change value if writable
@@ -1170,6 +1233,10 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
             Local<Value> argv[1] = {name};
             Local<Value> desc = fn->Call(info.This(), 1, argv);
 
+            if (firstTry.HasCaught()) {
+                return firstTry.ReThrow();
+            }
+
             if (!desc.IsEmpty() && desc->IsObject()) {
                 Local<Object> prop = desc->ToObject();
 
@@ -1179,6 +1246,11 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
                     temp = prop->Get(NodeProxy::set);
                     fn = Local<Function>::Cast(temp);
                     fn->Call(info.This(), 2, argv2);
+
+                    if (firstTry.HasCaught()) {
+                        return firstTry.ReThrow();
+                    }
+
                     return value;
 
                 // otherwise change value if writable
@@ -1193,6 +1265,7 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
     }
     return undef;
 }
+
 /**
  *    Invoked for determining if an object has a specific property
  *
@@ -1274,6 +1347,7 @@ Handle<Boolean> NodeProxy::QueryNamedProperty(Local<String> name,
     }
     return False();
 }
+
 /**
  *    Invoked for determining if an object has a specific property
  *
@@ -1308,7 +1382,9 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name,
                 }
                 return DoesntHavePropertyResponse;
             }
+
             Local<Value> argv[1] = {name};
+            TryCatch firstTry;
 
             if (obj->Has(NodeProxy::getOwnPropertyDescriptor)) {
                 temp = obj->Get(NodeProxy::getOwnPropertyDescriptor);
@@ -1316,6 +1392,11 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name,
                 if (!temp.IsEmpty() && temp->IsFunction()) {
                     fn = Local<Function>::Cast(temp);
                     temp = fn->Call(info.This(), 1, argv);
+
+                    if (firstTry.HasCaught()) {
+                        firstTry.ReThrow();
+                        return DoesntHavePropertyResponse;
+                    }
 
                     if (!temp.IsEmpty() && temp->IsObject()) {
                         return GetPropertyAttributeFromPropertyDescriptor(
@@ -1330,6 +1411,11 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name,
                 if (!temp.IsEmpty() && temp->IsFunction()) {
                     fn = Local<Function>::Cast(temp);
                     temp = fn->Call(info.This(), 1, argv);
+
+                    if (firstTry.HasCaught()) {
+                        firstTry.ReThrow();
+                        return DoesntHavePropertyResponse;
+                    }
 
                     if (!temp.IsEmpty() && temp->IsObject()) {
                         return GetPropertyAttributeFromPropertyDescriptor(
@@ -1347,6 +1433,11 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name,
                     fn = Local<Function>::Cast(temp);
                     temp = fn->Call(info.This(), 1, argv);
 
+                    if (firstTry.HasCaught()) {
+                        firstTry.ReThrow();
+                        return DoesntHavePropertyResponse;
+                    }
+
                     if (temp->IsBoolean()) {
                         return HasPropertyResponse;
                     }
@@ -1360,15 +1451,26 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name,
                     fn = Local<Function>::Cast(temp);
                     temp = fn->Call(info.This(), 1, argv);
 
+                    if (firstTry.HasCaught()) {
+                        firstTry.ReThrow();
+                        return DoesntHavePropertyResponse;
+                    }
+
                     if (temp->IsBoolean()) {
                         return HasPropertyResponse;
                     }
                 }
             }
+
+            if (firstTry.HasCaught()) {
+                firstTry.ReThrow();
+                return DoesntHavePropertyResponse;
+            }
         }
     }
     return DoesntHavePropertyResponse;
 }
+
 /**
  *    Find the appropriate PropertyAttribute
  *    for a given PropertyDescriptor object
@@ -1378,22 +1480,29 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name,
 Handle<Integer>
 NodeProxy::GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd) {
     HandleScope scope;
+    uint32_t ret = None;
 
     if (pd->Has(NodeProxy::configurable) &&
                 !pd->Get(NodeProxy::configurable)->BooleanValue()) {
-        return Integer::New(DontDelete);
-
-    } else if (pd->Has(NodeProxy::enumerable) &&
-                       !pd->Get(NodeProxy::enumerable)->BooleanValue()) {
-        return Integer::New(DontEnum);
-
-    } else if (pd->Has(NodeProxy::writable) &&
-                       !pd->Get(NodeProxy::writable)->BooleanValue()) {
-        return Integer::New(ReadOnly);
+        // return Integer::New(DontDelete);
+        ret &= DontDelete;
     }
 
-    return Integer::New(None);
+    if (pd->Has(NodeProxy::enumerable) &&
+                       !pd->Get(NodeProxy::enumerable)->BooleanValue()) {
+        // return Integer::New(DontEnum);
+        ret &= DontEnum;
+    }
+
+    if (pd->Has(NodeProxy::writable) &&
+                       !pd->Get(NodeProxy::writable)->BooleanValue()) {
+       // return Integer::New(ReadOnly);
+       ret &= ReadOnly;
+    }
+
+    return Integer::New(ret);
 }
+
 /**
  *    Invoked when deleting the named property of an object
  *
@@ -1444,6 +1553,7 @@ Handle<Boolean> NodeProxy::DeleteNamedProperty(Local<String> name,
     }
     return False();
 }
+
 /**
  *    Invoked for enumerating all properties of an object
  *
@@ -1481,6 +1591,7 @@ Handle<Array> NodeProxy::EnumerateNamedProperties(const AccessorInfo &info) {
     }
     return Array::New();
 }
+
 /**
  *    Invoked for accessing the given indexed property of an object
  *
@@ -1495,6 +1606,7 @@ Handle<Value> NodeProxy::GetIndexedProperty(uint32_t index,
                                 Integer::NewFromUnsigned(index)),
                             info);
 }
+
 /**
  *    Invoked for setting the given indexed property of an object
  *
@@ -1511,6 +1623,7 @@ Handle<Value> NodeProxy::SetIndexedProperty(uint32_t index,
                             value,
                             info);
 }
+
 /**
  *    Invoked for determining if an object has a given indexed property
  *
@@ -1533,6 +1646,7 @@ Handle<Integer> NodeProxy::QueryIndexedPropertyInteger(uint32_t index,
                 Local<String>::Cast(Integer::NewFromUnsigned(index)),
                 info);
 }
+
 /**
  *    Invoked for deleting a given indexed property
  *
@@ -1547,6 +1661,7 @@ Handle<Boolean> NodeProxy::DeleteIndexedProperty(uint32_t index,
                     Local<String>::Cast(Integer::NewFromUnsigned(index)),
                     info);
 }
+
 /**
  *    Initialize the NodeProxy Strings and functions
  *
