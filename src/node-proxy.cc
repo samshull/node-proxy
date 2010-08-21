@@ -440,7 +440,16 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
     // indexed property handlers
     temp->SetIndexedPropertyHandler(GetIndexedProperty,
                                     SetIndexedProperty,
-                                    QueryIndexedProperty,
+                                    
+// different versions of V8 require different return types
+// 0.2.0 is where the switch occurred
+#ifndef NODE_MAJOR_VERSION
+                                  QueryIndexedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
+                                  QueryIndexedPropertyInteger,
+#else
+                                  QueryIndexedProperty,
+#endif
                                     DeleteIndexedProperty);
 
     Local<Object> instance = temp->NewInstance();
@@ -533,7 +542,15 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 
     instance->SetIndexedPropertyHandler(GetIndexedProperty,
                                         SetIndexedProperty,
-                                        QueryIndexedProperty,
+// different versions of V8 require different return types
+// 0.2.0 is where the switch occurred
+#ifndef NODE_MAJOR_VERSION
+                                  QueryIndexedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
+                                  QueryIndexedPropertyInteger,
+#else
+                                  QueryIndexedProperty,
+#endif
                                         DeleteIndexedProperty);
 
     Local<Function> fn = temp->GetFunction();
