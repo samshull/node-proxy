@@ -198,19 +198,19 @@ Handle<Value> NodeProxy::ValidateProxyHandler(Local<Object> handler) {
 }
 
 /**
+ * Causing Error
  *
  *
- */
 Local<Value> NodeProxy::CorrectPropertyDescriptor(Local<Object> pd) {
-    HandleScope scope;
+    //HandleScope scope;
 
-    Local<Value> undef;
+    Local<Value> undef = Local<Value>::New(Undefined());
 
     // pd->Set(NodeProxy::value,
                // pd->Has(NodeProxy::value) ?
                // pd->Get(NodeProxy::value) :
                // undef);
-
+return Local<Value>::New(THREXC("CorrectPropertyDescriptor"));
     pd->Set(NodeProxy::writable,
             pd->Has(NodeProxy::writable) ?
             pd->Get(NodeProxy::writable)->ToBoolean() :
@@ -819,7 +819,8 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
     Local<String> name = args[1]->ToString();
     Local<Object> handler = temp->ToObject();
 
-    if (handler->GetHiddenValue(NodeProxy::sealed)->BooleanValue()) {
+    if (handler->GetHiddenValue(NodeProxy::sealed)->BooleanValue() ||
+		!handler->Has(NodeProxy::defineProperty)) {
         return False();
     }
 
@@ -833,17 +834,18 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
 
         if (desc->Get(NodeProxy::configurable)->BooleanValue()) {
             return Boolean::New(
-                     handler->Set(name,
-                        CorrectPropertyDescriptor(args[2]->ToObject())));
+                     handler->Set(name, args[2]->ToObject()));
         }
         return False();
     }
+	
+	
 
     Local<Function> def = Local<Function>::Cast(
                                     handler->Get(NodeProxy::defineProperty));
-    Local<Value> argv[2] = {args[1],
-                            CorrectPropertyDescriptor(args[2]->ToObject())};
-
+	
+    Local<Value> argv[2] = {args[1], args[2]->ToObject()};
+						
     return def->Call(obj, 2, argv)->ToBoolean();
 }
 
@@ -876,7 +878,7 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
     }
 
     Local<Value> temp = obj->GetInternalField(0);
-
+	
     if (!temp.IsEmpty() && temp->IsObject()) {
         Local<Object> props = args[1]->ToObject();
         Local<Object> handler = temp->ToObject();
@@ -885,7 +887,6 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
             return False();
         }
 
-        Local<Object> name;
         bool extensible = handler->GetHiddenValue(
                                     NodeProxy::extensible)->BooleanValue();
         Local<Array> names = props->GetPropertyNames();
@@ -893,7 +894,7 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
 
         if (!handler->GetHiddenValue(NodeProxy::trapping)->BooleanValue()) {
             for (;i < l; ++i) {
-                name = names->CloneElementAt(i);
+                Local<Object> name = names->CloneElementAt(i);
 
                 if (handler->Has(name->ToString()) &&
                         handler->Get(name->ToString())->IsObject()
@@ -924,10 +925,11 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
 
         TryCatch firstTry;
         for (;i < l; ++i) {
-            name = names->CloneElementAt(i);
-
+            Local<Value> name = names->Get(i);
+			
             if (extensible || obj->Has(name->ToString())) {
-                Local<Value> argv[2] = {name, props->Get(name->ToString())};
+				Local<Value> pd = props->Get(name->ToString());
+				Local<Value> argv[2] = {name, pd};
                 def->Call(obj, 2, argv);
 
                 if (firstTry.HasCaught()) {
