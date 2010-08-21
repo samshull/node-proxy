@@ -5,7 +5,6 @@
 
     var sys = require('sys'),
         assert = require('assert'),
-        total_tests = 11,
         undef,
         called, p,
         Proxy = require("node-proxy"),
@@ -94,105 +93,265 @@
                 
                     handlers[name].value = val;
                     return true;
-                },
-                keys:function (){
-                    called = "keys";
-                    return Object.getOwnPropertyNames(handlers);
                 }
             });
         },
-        proxyTest,
+        proxyTest, 
+		clone, 
+		cloneProxy,
+		proxyTrapTest,
         firstValue = "firstProp",
-        names, count,
+        names, 
+		count, 
+		regex = /regex/,
+		base = {},
         handlers = {
             first: {
                 get:function (){return firstValue;},
                 set:function (val){firstValue = val;}
             }
-        };
-    
-    sys.puts("Running tests...");
-    sys.puts("Test 1 of " + total_tests + ": Creating proxy");
-    proxyTest = createProxy(handlers);
-    assert.equal(called, "createProxy", "createProxy was not the last method called");
-    assert.ok(typeof proxyTest == "object");
-    
-    sys.puts("Test 2 of " + total_tests + ": has");
-    assert.ok("first" in proxyTest, "proxyTest does not have a property named 'first'");
-    //assert.equal(called, "has", "the has method was not the last method called");
-    
-    sys.puts("Test 3 of " + total_tests + ": Accessing getter");
-    assert.equal(proxyTest.first, firstValue);
-    assert.equal(called, "get", "the get method was not the last method called");
-    
-    sys.puts("Test 4 of " + total_tests + ": Accessing setter");
-    proxyTest.first = "changed";
-    assert.equal(called, "set", "the set method was not the last method called");
-    assert.equal(proxyTest.first, firstValue, "proxyTest.first != firstValue");
-    
-    sys.puts("Test 5 of " + total_tests + ": set property");
-    proxyTest.second = "secondProp";
-    assert.equal(called, "set", "the set method was not the last method called");
-    
-    sys.puts("Test 6 of " + total_tests + ": Iterate property names");
-    count = 0;
-    for (p in proxyTest){++count;}
-    assert.equal(count, 2, "there are not 2 properties on proxyTest");
-    
-    sys.puts("Test 7 of " + total_tests + ": getOwnPropertyNames");
-    names = Object.getOwnPropertyNames(proxyTest);
-    assert.equal(called, "enumerate", "Object.getOwnPropertyNames did not invoke enumerate");
-    assert.ok(names instanceof Array);
-    assert.equal(names.length, 2, "2 property names were not returned");
-    assert.equal(names[0], "first", "The first property name is not 'first'");
-    assert.equal(names[1], "second", "The second property name is not 'second'");
-    
-    sys.puts("Test 8 of " + total_tests + ": keys");
-    names = Object.keys(proxyTest);
-    assert.equal(called, "enumerate", "Object.keys did not invoke 'enumerate'");
-    assert.ok(names instanceof Array);
-    assert.equal(names.length, 2, "2 property names were not returned");
-    assert.equal(names[0], "first", "The first property name is not 'first'");
-    assert.equal(names[1], "second", "The second property name is not 'second'");
-    
-    sys.puts("Test 9 of " + total_tests + ": delete");
-    assert.ok((delete proxyTest.second), "Delete the property 'second' from the proxy");
-    assert.equal(called, "delete", "the delete method was not the last method called");
-    assert.ok(!Object.prototype.hasOwnProperty.call(proxyTest, "second"), "proxyTest still hasOwnProperty the property 'second'");
-    assert.ok(!("second" in proxyTest), "proxyTest still has the property 'second'");
-    
-    sys.puts("Test 10 of " + total_tests + ": defineProperty");
-	Proxy.defineProperty(proxyTest, 'third', {
-		get: function() {
-			return "third";
-		}
-	});
-	assert.equal(called, "defineProperty", "defineProperty was not called: "+called);
-    assert.ok("third" in proxyTest);
-	assert.equal(proxyTest.third, "third", "proxyTest.third != 'third'");
-    
-    sys.puts("Test 11 of " + total_tests + ": defineProperties");
-	Proxy.defineProperties(proxyTest, {
-		fourth: {
-			get: function() {
-				return "fourth";
+        }, 
+		tests = {
+			"Base Proxy methods": {
+				"Proxy.create": function() {
+					proxyTest = createProxy(handlers);
+				    assert.equal(called, "createProxy", "createProxy was not the last method called");
+				    assert.ok(typeof proxyTest == "object");
+				},
+
+				"Proxy.createFunction": function() {
+					//proxyTrapTest = createProxyFunction(funcHandlers, callTrap);
+				},
+			
+				"Proxy.createFunction with optional constructor trap": function() {
+					//proxyTrapTest = createProxyFunction(funcHandlers, callTrap, constructTrap);
+				},
+			
+				"Proxy.isTrapping on proxy object": function() {
+					assert.ok(Proxy.isTrapping(proxyTest), "proxyTest is not trapping");
+				},
+			},
+			
+			"Testing proxy object instance": {
+				"has property 'first'": function() {
+					assert.ok("first" in proxyTest, "proxyTest does not have a property named 'first'");
+				    //assert.equal(called, "has", "the has method was not the last method called");
+				},
+			
+				"get property 'first'": function(){
+					assert.equal(proxyTest.first, firstValue);
+				    assert.equal(called, "get", "the get method was not the last method called");
+				},
+				
+				"set property 'first' to new value": function() {
+					proxyTest.first = "changed";
+				    assert.equal(called, "set", "the set method was not the last method called");
+				    assert.equal(proxyTest.first, firstValue, "proxyTest.first != firstValue");
+				},
+				
+				"set new property 'second'": function() {
+					proxyTest.second = "secondProp";
+				    assert.equal(called, "set", "the set method was not the last method called");
+				},
+				
+				"has new property 'second'": function() {
+					assert.ok("second" in proxyTest, "proxyTest does not have the property 'second'");
+				},
+				
+				"get newly set property 'second'": function() {
+					assert.equal(proxyTest.second, "secondProp", "proxyTest.second is not equal to 'secondProp'");
+				},
+				
+				"iterate property names": function() {
+					count = 0;
+				    for (p in proxyTest){++count;}
+				    assert.equal(count, 2, "there are not 2 properties on proxyTest");
+				},
+				
+				"Object.getOwnPropertyNames on proxy object": function() {
+					names = Object.getOwnPropertyNames(proxyTest);
+				    assert.equal(called, "enumerate", "Object.getOwnPropertyNames did not invoke enumerate");
+				},
+				
+				"Object.getOwnPropertyNames returned an Array": function() {
+					assert.ok(names instanceof Array);
+				},
+				
+				"Object.getOwnPropertyNames return value has the correct length": function() {
+					assert.equal(names.length, 2, "2 property names were not returned");
+				},
+				
+				"Object.getOwnPropertyNames has the correct values": function() {
+					assert.equal(names[0], "first", "The first property name is not 'first'");
+				    assert.equal(names[1], "second", "The second property name is not 'second'");
+				},
+				
+				"Object.keys on proxy object": function() {
+					names = Object.keys(proxyTest);
+				    assert.equal(called, "enumerate", "Object.keys did not invoke 'enumerate'");
+				},
+				
+				"Object.keys returned an Array": function() {
+					assert.ok(names instanceof Array);
+				},
+				
+				"Object.keys return value has the correct length": function() {
+					assert.equal(names.length, 2, "2 property names were not returned");
+				},
+				
+				"Object.keys has the correct values": function() {
+					assert.equal(names[0], "first", "The first property name is not 'first'");
+				    assert.equal(names[1], "second", "The second property name is not 'second'");
+				},
+				
+				"delete 'second'": function() {
+					assert.ok((delete proxyTest.second), "Delete the property 'second' from the proxy");
+				    assert.equal(called, "delete", "the delete method was not the last method called");
+				    
+				},
+				
+				"proxy instance no longer has property 'second'": function() {
+					assert.ok(!Object.prototype.hasOwnProperty.call(proxyTest, "second"), "proxyTest still hasOwnProperty the property 'second'");
+				    assert.ok(!("second" in proxyTest), "proxyTest still has the property 'second'");
+				}
+			},
+			
+			"ECMAScript 5 implementation methods": {
+				"Proxy.defineProperty on proxy object": function() {
+					Proxy.defineProperty(proxyTest, 'third', {
+						get: function() {
+							return "third";
+						}
+					});
+					assert.equal(called, "defineProperty", "defineProperty was not called: "+called);
+				},
+				
+				"proxy has newly defined property": function() {
+					assert.ok("third" in proxyTest);
+				},
+				
+				"proxy's newly defined property have correct return value": function() {
+					assert.equal(proxyTest.third, "third", "proxyTest.third != 'third'");
+				},
+				
+				"proxy's newly defined property are reflected in underlying handlers": function() {
+					assert.ok("third" in handlers, "'third' is not in handlers");
+				},
+				
+				"Proxy.defineProperties on proxy object": function() {
+					Proxy.defineProperties(proxyTest, {
+						fourth: {
+							get: function() {
+								return "fourth";
+							}
+						},
+						fifth: {
+							get: function() {
+								return "fifth";
+							}
+						}
+					});
+					assert.equal(called, "defineProperty", "defineProperty was not called: "+called);
+				},
+				
+				"proxy has newly defined properties": function() {
+					assert.ok("fourth" in proxyTest);
+					assert.ok("fifth" in proxyTest);
+				},
+				
+				"proxy's newly defined properties have correct return value": function() {
+					assert.equal(proxyTest.fourth, "fourth", "proxyTest.fourth != 'fourth'");
+					assert.equal(proxyTest.fifth, "fifth", "proxyTest.fifth != 'fifth'");
+				},
+				
+				"proxy's newly defined properties are reflected in underlying handlers": function() {
+					assert.ok("fourth" in handlers, "'fourth' is not in handlers");
+					assert.ok("fifth" in handlers, "'fifth' is not in handlers");
+				}
+			},
+			
+			"Additional method tests": {
+				"Proxy.isProxy proxy object": function() {
+					assert.ok(Proxy.isProxy(proxyTest), "proxyTest is not a Proxy");
+				},
+				
+				"Proxy.isProxy non-proxy object": function() {
+					assert.ok(!Proxy.isProxy({}), "object is a Proxy");
+				},
+				
+				"Proxy.setPrototype of proxy object": function() {
+					assert.ok(Proxy.setPrototype(proxyTest, RegExp.prototype), "unable to set prototype of RegExp on proxyTest");
+				},
+				
+				"proxy object is instanceof RegExp": function() {
+					assert.ok(proxyTest instanceof RegExp, "proxyTest is not an instanceof RegExp");
+				},
+
+				"Proxy.setPrototype of non-proxy object": function() {
+					assert.ok(Proxy.setPrototype(base, Number.prototype), "unable to set prototype of Number on base");
+				},
+				
+				"non-proxy object is instanceof RegExp": function() {
+					assert.ok(base instanceof Number, "base is not an instanceof Number");
+				},
+
+				"Proxy.clone proxy object": function() {
+					cloneProxy = Proxy.clone(proxyTest);
+					assert.ok(typeof cloneProxy == "object", "cloneProxy does not result in an object");
+				},
+
+				"cloned proxy maintains prototype of base proxy": function() {
+					assert.ok(cloneProxy instanceof RegExp, "cloneProxy is not an instanceof RegExp");
+				},
+
+				"Proxy.clone non-proxy object": function() {
+					clone = Proxy.clone(base);
+					assert.ok(clone !== base, "clone is identical to base object");
+					
+				},
+				
+				"cloned object maintains prototype of base": function() {
+					assert.ok(clone instanceof Number, "clone is not an instance of a Number");
+				},
+
+				"set hidden property on cloned object": function() {
+					assert.ok(Proxy.hidden(clone, "hiddenTest", regex), "unable to set hidden property 'hiddenTest' on clone");
+				},
+
+				"get hidden property on cloned object": function() {
+					assert.ok(Proxy.hidden(clone, "hiddenTest") === regex, "unable to retrieve hidden property 'hiddenTest' on clone");
+				},
 			}
-		},
-		fifth: {
-			get: function() {
-				return "fifth";
+		}, section, sectionName, test, testIndex, sectionIndex = 0, totalTests = 0, passedTests = 0, failedTests = 0;
+    
+    sys.puts("Running tests...\n");
+
+	for (sectionName in tests) {
+		++sectionIndex;
+		sys.puts("\n" + sectionIndex + ": "+ sectionName);
+		
+		testIndex = 0;
+		section = tests[sectionName];
+		
+		for (test in section) {
+			++totalTests;
+			++testIndex;
+			sys.print("  " + test + ": ");
+			
+			try{
+				section[test]();
+				++passedTests;
+				sys.puts("PASS");
+			} catch(e) {
+				++failedTests;
+				sys.puts("FAIL: "+ e.message);
 			}
 		}
-	});
-	assert.equal(called, "defineProperty", "defineProperty was not called: "+called);
-    assert.ok("fourth" in proxyTest);
-	assert.ok("fifth" in proxyTest);
-	assert.equal(proxyTest.fourth, "fourth", "proxyTest.fourth != 'fourth'");
-	assert.equal(proxyTest.fifth, "fifth", "proxyTest.fifth != 'fifth'");
-	assert.ok("fourth" in handlers, "'fourth' is not in handlers");
-	assert.ok("fifth" in handlers, "'fifth' is not in handlers");
-    
-    
+	}
+	
+	sys.puts("\nPassed " + passedTests + " of " + totalTests + " tests");
+	sys.puts("\nFailed " + failedTests + " of " + totalTests + " tests");
+	sys.puts("");
     
     process.exit(0);
 }());
