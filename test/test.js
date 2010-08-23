@@ -8,6 +8,65 @@
         undef,
         called, p,
         Proxy = require("node-proxy"),
+		createProxyFunction = function(handlers, callTrap, constructorTrap) {
+			called = "createProxyFunction";
+            
+            return Proxy.createFunction({
+                "delete": function (name){
+                    called = "delete";
+                    var r = true;
+                    if (name in handlers) {
+                        r = (delete handlers[name]);
+                    }
+                    return r;
+                },
+                enumerate: function (){
+                    called = "enumerate";
+                    return Object.keys(handlers);
+                },
+                fix: function (){
+                    called = "fix";
+                    return handlers;
+                },
+                has: function (name){
+                    called = "has";
+                    return (name in handlers);
+                },
+                get: function (receiver, name){
+                    called = "get";
+                    if (!(name in handlers)) {
+                        return undef;
+                    }
+                    return "get" in handlers[name] && typeof(handlers[name].get) == "function" ? 
+                            handlers[name].get.call(receiver) : 
+                            (handlers[name].value || undef);
+                },
+                set: function (receiver, name, val){
+                    called = "set";
+                    if (!(name in handlers)) {
+                        defineProperty.call(this, name, {
+                            configurable:true,
+                            writable:true,
+                            enumerable:true,
+                            value:val,
+                            get:function (){return val;},
+                            set:function (v){val=v;}
+                        });
+                        called = "set";
+                        return true;
+                    }
+                    if (!handlers[name].configurable) {
+                        return false;
+                    }
+                    if ("set" in handlers[name]) {
+                        handlers[name].set.call(receiver, val);
+                    }
+                
+                    handlers[name].value = val;
+                    return true;
+                }
+            }, callTrap);
+		},
         createProxy = function (handlers) {
             called = "createProxy";
             
@@ -100,6 +159,7 @@
 		clone, 
 		cloneProxy,
 		proxyTrapTest,
+		proxyTrapTestInstance,
         firstValue = "firstProp",
         names, 
 		count, 
@@ -111,6 +171,15 @@
                 set:function (val){firstValue = val;}
             }
         }, 
+		funcHandlers = {
+			test: {
+				get:function(){return "working";}
+			}
+		},
+		callTrap = function() {
+			called = "callTrap";
+			return this;
+		},
 		tests = {
 			"Base Proxy methods": {
 				"Proxy.create": function() {
@@ -120,7 +189,9 @@
 				},
 
 				"Proxy.createFunction": function() {
-					//proxyTrapTest = createProxyFunction(funcHandlers, callTrap);
+					proxyTrapTest = createProxyFunction(funcHandlers, callTrap);
+					assert.equal(called, "createProxyFunction", "createProxyFunction was not the last method called");
+					//assert.ok(typeof proxyTrapTest == "function", "proxyTrapTest is not a function");
 				},
 			
 				"Proxy.createFunction with optional constructor trap": function() {
@@ -130,6 +201,31 @@
 				"Proxy.isTrapping on proxy object": function() {
 					assert.ok(Proxy.isTrapping(proxyTest), "proxyTest is not trapping");
 				},
+			},
+
+			"Testing proxy function instance": {
+				"proxy function is callable": function() {
+					proxyTrapTest();
+					assert.equal(called, "callTrap", "callTrap was not the last function called");
+				},
+				
+				"proxy function has accessible properties": function() {
+					assert.ok("test" in proxyTrapTest, "'test' not in proxyTrapTest");
+				},
+
+				"proxy function get properties": function() {
+					assert.equal(proxyTrapTest.test, "working", "'test' not in proxyTrapTest");
+				},
+				
+				"proxy function as constructor": function() {
+					proxyTrapTestInstance = new proxyTrapTest();
+					assert.equal(called, "callTrap", "callTrap was not last call");
+				},
+				
+				"proxy function instance property handling": function() {
+					assert.ok("test" in proxyTrapTestInstance, "no 'test' in proxyTrapTestInstance");
+					assert.equal(called, "has", "did not call has");
+				}
 			},
 			
 			"Testing proxy object instance": {
