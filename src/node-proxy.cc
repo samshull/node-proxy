@@ -478,8 +478,6 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
     HandleScope scope;
 
-    Local<Object> proxyHandler;
-
     if (args.Length() < 2) {
         return THREXC("createFunction requires at least two (2) arguments.");
     }
@@ -489,7 +487,7 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
             "createFunction requires the first argument to be an Object.");
     }
     // cloning here allows maintaining reference to original functions
-    proxyHandler = args[0]->ToObject()->Clone();
+    Local<Object> proxyHandler = args[0]->ToObject()->Clone();
     Handle<Value> valid = ValidateProxyHandler(proxyHandler);
 
     if (!valid->IsBoolean()) {
@@ -517,13 +515,13 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
     proxyHandler->SetHiddenValue(NodeProxy::sealed, False());
     proxyHandler->SetHiddenValue(NodeProxy::frozen, False());
 
-    Local<FunctionTemplate> temp = FunctionTemplate::New(New, proxyHandler);
-
-    // Local<ObjectTemplate> proto = temp->PrototypeTemplate();
-
-    Local<ObjectTemplate> instance = temp->InstanceTemplate();
-
-    instance->SetInternalFieldCount(1);
+	//Local<FunctionTemplate> temp = FunctionTemplate::New(New, proxyHandler);
+	//temp->Set("__crazy", proxyHandler);
+	
+    //Local<ObjectTemplate> instance = temp->InstanceTemplate();
+	Local<ObjectTemplate> instance = ObjectTemplate::New();
+	instance->SetCallAsFunctionHandler(New, proxyHandler);
+	instance->SetInternalFieldCount(1);
 
     instance->SetNamedPropertyHandler(GetNamedProperty,
                                       SetNamedProperty,
@@ -545,17 +543,62 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 // different versions of V8 require different return types
 // 0.2.0 is where the switch occurred
 #ifndef NODE_MAJOR_VERSION
-                                  QueryIndexedProperty,
+                                  		QueryIndexedProperty,
 #elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
-                                  QueryIndexedPropertyInteger,
+                                  		QueryIndexedPropertyInteger,
 #else
-                                  QueryIndexedProperty,
+                                  		QueryIndexedProperty,
 #endif
                                         DeleteIndexedProperty);
 
-    Local<Function> fn = temp->GetFunction();
+/*	
+	Local<ObjectTemplate> proto = temp->PrototypeTemplate();
+	proto->SetInternalFieldCount(1);
+	
 
-    fn->SetInternalField(0, proxyHandler);
+    proto->SetNamedPropertyHandler(GetNamedProperty,
+                                      SetNamedProperty,
+// different versions of V8 require different return types
+// 0.1.97 is where the switch occurred in v8,
+// but NODE_*_VERSION wasn't added until 0.1.100
+#ifndef NODE_MAJOR_VERSION
+                                      QueryNamedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
+                                      QueryNamedPropertyInteger,
+#else
+                                      QueryNamedProperty,
+#endif
+                                      DeleteNamedProperty,
+                                      EnumerateNamedProperties,
+									  proxyHandler);
+
+    proto->SetIndexedPropertyHandler(GetIndexedProperty,
+                                        SetIndexedProperty,
+// different versions of V8 require different return types
+// 0.2.0 is where the switch occurred
+#ifndef NODE_MAJOR_VERSION
+                                  		QueryIndexedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
+                                  		QueryIndexedPropertyInteger,
+#else
+                                  		QueryIndexedProperty,
+#endif
+                                        DeleteIndexedProperty,
+                                        0,
+										proxyHandler);
+*/
+	assert(!V8::IsDead());
+	Local<Object> fn = instance->NewInstance();
+/*	
+	Local<Function> fn = temp->GetFunction();
+
+	assert(fn->IsFunction());
+	
+	Local<Object> inst = fn->NewInstance();
+	//Local<Function> fn( temp->GetFunction() );
+	//Local<Object> fn = instance->NewInstance();
+	
+	//assert(temp->HasInstance(inst));
 
     // optionally pass the name of your function
     // attached to the ProxyHandler Object
@@ -563,6 +606,14 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
         proxyHandler->Get(NodeProxy::name)->IsString()) {
         fn->SetName(proxyHandler->Get(NodeProxy::name)->ToString());
     }
+*/	
+	
+	assert(fn->HasNamedLookupInterceptor());
+	assert(fn->HasIndexedLookupInterceptor());
+	assert(fn->InternalFieldCount() > 0);
+	
+	fn->SetInternalField(0, proxyHandler);
+	
     return fn;
 }
 
@@ -954,13 +1005,15 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
 Handle<Value> NodeProxy::New(const Arguments& args) {
     HandleScope scope;
 
-    if (args.This()->InternalFieldCount() < 1) {
+    if (args.Callee()->InternalFieldCount() < 1 && args.Data().IsEmpty()) {
         return THR_TYPE_ERROR("defineProperty expects first "
                                 "argument to be intialized by Proxy");
     }
 
     Local<Value> info, ret,
-                 data = args.This()->GetInternalField(0);
+                 data = args.Callee()->InternalFieldCount() > 0 ?
+						args.Callee()->GetInternalField(0) : 
+						args.Data();
 
     if (data.IsEmpty() || !data->IsObject()) {
         return THREXC("Invalid reference to Proxy#constructor");
@@ -1010,7 +1063,7 @@ Handle<Value> NodeProxy::GetNamedProperty(Local<String> name,
                                           const AccessorInfo &info) {
     HandleScope scope;
 
-    if (info.This()->InternalFieldCount() < 1) {
+    if (info.This()->InternalFieldCount() < 1 || info.Data().IsEmpty()) {
         return THR_TYPE_ERROR("SetNamedProperty intercepted "
                                 "by non-Proxy object");
     }
@@ -1018,7 +1071,9 @@ Handle<Value> NodeProxy::GetNamedProperty(Local<String> name,
     Local<Value> argv[2] = {info.This(), name},
                  argv1[1] = {name},
                  temp, ret, undef,
-                 data = info.This()->GetInternalField(0);
+                 data = info.This()->InternalFieldCount() > 0 ?
+						info.This()->GetInternalField(0) :
+						info.Data();
 
     if (!data.IsEmpty() && data->IsObject()) {
         Local<Function> fn;
@@ -1134,7 +1189,7 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
                                           const AccessorInfo &info) {
     HandleScope scope;
 
-    if (info.This()->InternalFieldCount() < 1) {
+    if (info.This()->InternalFieldCount() < 1 || info.Data().IsEmpty()) {
         return THR_TYPE_ERROR("SetNamedProperty intercepted "
                                 "by non-Proxy object");
     }
@@ -1142,7 +1197,9 @@ Handle<Value> NodeProxy::SetNamedProperty(Local<String> name,
     Local<Function> fn;
     Local<Value> argv2[2] = {name, value},
                  undef, temp,
-                 data = info.This()->GetInternalField(0);
+                 data = info.This()->InternalFieldCount() > 0 ?
+						info.This()->GetInternalField(0) :
+						 info.Data();
 
     if (!data.IsEmpty() && data->IsObject()) {
         Local<Object> obj = data->ToObject();
@@ -1295,9 +1352,15 @@ Handle<Boolean> NodeProxy::QueryNamedProperty(Local<String> name,
                                               const AccessorInfo &info) {
     HandleScope scope;
 
-    if (info.This()->InternalFieldCount() < 1) {
+	if (name->Equals(String::New("test"))) {
+		assert(info.Data().IsEmpty() || !info.Data()->IsObject() || !info.Data()->ToObject()->Has(NodeProxy::getOwnPropertyDescriptor));
+	}
+
+    if (info.This()->InternalFieldCount() < 1 || !info.Data().IsEmpty()) {
         Local<Value> argv[1] = {name}, temp;
-        Local<Value> data = info.This()->GetInternalField(0);
+        Local<Value> data = info.This()->InternalFieldCount() > 0 ?
+							info.This()->GetInternalField(0) :
+							 info.Data();
         Local<Function> fn;
 
         if (!data.IsEmpty() && data->IsObject()) {
@@ -1380,8 +1443,11 @@ Handle<Integer> NodeProxy::QueryNamedPropertyInteger(Local<String> name,
     Local<Integer> DoesntHavePropertyResponse;
     Local<Integer> HasPropertyResponse = Integer::New(None);
 
-    if (info.This()->InternalFieldCount() > 0) {
-        Local<Value> temp, data = info.This()->GetInternalField(0);
+    if (info.This()->InternalFieldCount() > 0 || !info.Data().IsEmpty()) {
+        Local<Value> temp, 
+					data = info.This()->InternalFieldCount() > 0 ?
+							info.This()->GetInternalField(0) :
+							 info.Data();
         Local<Function> fn;
 
         if (!data.IsEmpty() && data->IsObject()) {
@@ -1532,8 +1598,11 @@ Handle<Boolean> NodeProxy::DeleteNamedProperty(Local<String> name,
                                                const AccessorInfo &info) {
     HandleScope scope;
 
-    if (info.This()->InternalFieldCount() > 0) {
-        Local<Value> temp, data = info.This()->GetInternalField(0);
+    if (info.This()->InternalFieldCount() > 0 || !info.Data().IsEmpty()) {
+        Local<Value> temp, 
+					data = info.This()->InternalFieldCount() > 0 ?
+							info.This()->GetInternalField(0) :
+							 info.Data();
 
         if (!data.IsEmpty() && data->IsObject()) {
             Local<Object> obj = data->ToObject();
@@ -1582,8 +1651,10 @@ Handle<Boolean> NodeProxy::DeleteNamedProperty(Local<String> name,
 Handle<Array> NodeProxy::EnumerateNamedProperties(const AccessorInfo &info) {
     HandleScope scope;
 
-    if (info.This()->InternalFieldCount() > 0) {
-        Local<Value> data = info.This()->GetInternalField(0);
+    if (info.This()->InternalFieldCount() > 0 || !info.Data().IsEmpty()) {
+        Local<Value> data = info.This()->InternalFieldCount() > 0 ?
+							info.This()->GetInternalField(0) :
+							 info.Data();
 
         if (!data.IsEmpty() && data->IsObject()) {
             Local<Object> obj = data->ToObject();
