@@ -1,7 +1,7 @@
 {
 	"name": "node-proxy",
-	"version": "0.3.1",
-	"description": "A module for node implementing part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
+	"version": "0.3.2",
+	"description": "A module for node implementing __noSuchMethod__-type handlers, such as object overloading, as part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
     "keywords": [
         "interceptor",
         "proxy",
