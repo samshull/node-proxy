@@ -589,6 +589,7 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 */
 	assert(!V8::IsDead());
 	Local<Object> fn = instance->NewInstance();
+	fn->SetPrototype(args[1]->ToObject()->GetPrototype());
 /*	
 	Local<Function> fn = temp->GetFunction();
 

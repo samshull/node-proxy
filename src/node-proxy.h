@@ -38,8 +38,6 @@
 #include <node.h>
 #include <node_version.h>
 
-#include <String>
-
 #define THREXCW(str) ThrowException(Exception::Error(str))
 #define THREXC(str) THREXCW(String::New(str))
 #define THR_TYPE_ERROR(str) \
