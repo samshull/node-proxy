@@ -1,37 +1,37 @@
 {
-	"name": "node-proxy",
-	"version": "0.3.2",
-	"description": "A module for node implementing __noSuchMethod__-type handlers, such as object overloading, as part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
-    "keywords": [
+    "name"                 : "node-proxy",
+    "version"              : "0.3.2",
+    "description"          : "A module for node implementing __noSuchMethod__-type handlers, such as object overloading, as part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
+    "keywords"             : [
         "interceptor",
         "proxy",
         "overload",
         "__noSuchMethod__"
     ],
-    "contributors": [ "Sam Shull <http://www.google.com/profiles/brickysam26>" ],
-    "licenses": [
+    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>" ],
+    "licenses"             : [
         {
-            "type": "MIT",
-            "url": "http://www.opensource.org/licenses/mit-license.html"
+            "type"         : "MIT",
+            "url"          : "http://www.opensource.org/licenses/mit-license.html"
         }
     ],
-	"bugs":{
-		"web":"http://github.com/brickysam26/node-proxy/issues"
-	},
-    "implements": [
+    "bugs"                 : {
+        "web"              : "http://github.com/samshull/node-proxy/issues"
+    },
+    "implements"           : [
         "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
     ],
-	"engines": {
-		"node" : ">=0.1.103"
-	},
-    "repositories": [
+    "engines"              : {
+        "node"             : ">=0.1.103"
+    },
+    "repositories"         : [
         {
-            "type": "git",
-            "url": "http://github.com/brickysam26/node-proxy"
+            "type"         : "git",
+            "url"          : "http://github.com/samshull/node-proxy"
         }
     ],
-    "main": "./lib/node-proxy.node",
-	"scripts":{
-		"install":"make"
-	}
+    "main"                 : "./lib/node-proxy.node",
+    "scripts"              : {
+        "install"          : "make"
+    }
 }
