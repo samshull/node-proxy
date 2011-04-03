@@ -347,6 +347,9 @@
           proxy.tester = 2;
         },
 
+        // TODO: write more PropertyDescriptor tests:
+        // value, configurable, enumerable, writable, ...
+
         "PropertyDescriptor should get value if get method is not supplied": function() {
           var pd = { value: 2 },
               proxy = Proxy.create({
@@ -369,6 +372,9 @@
           proxy.tester = 3;
           assert.ok(proxy.tester === pd.value, "PropertyDescriptor value was not changed");
         }
+
+        // TODO: write more fundamental trap tests:
+        // getOwnPropertyDescriptor, getPropertyNames, getOwnPropertyNames, ...
       },
 
       "Derived traps": {
@@ -421,8 +427,11 @@
               },
               proxy = Proxy.create(handler);
           proxy.tester = 6;
-          assert.ok(called, "PropertyHandler get method was not called properly");
+          assert.ok(called, "PropertyHandler set method was not called properly");
         }
+
+        // TODO: write more derived trap tests:
+        // keys, hasOwn, ...
       },
 
       "ECMAScript 5 implementation methods": {
