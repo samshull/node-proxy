@@ -148,6 +148,14 @@ class NodeProxy {
   static Handle<Boolean>
     DeleteIndexedProperty(uint32_t index,
                 const AccessorInfo &info);
+
+  static Local<Value> CallPropertyDescriptorGet(Local<Value> descriptor,
+              Handle<Object> context,
+              Local<Value> args[1]);
+  static Local<Value> CallPropertyDescriptorSet(Local<Value> descriptor,
+              Handle<Object> context,
+              Local<Value> name,
+              Local<Value> value);
 };
 }
 
