@@ -57,18 +57,22 @@ namespace v8 {
 
 class NodeProxy {
   public:
+    // fundamental traps
     static Persistent<String> getOwnPropertyDescriptor;
     static Persistent<String> getPropertyDescriptor;
-    static Persistent<String> defineProperty;
     static Persistent<String> getOwnPropertyNames;
+    static Persistent<String> getPropertyNames;
+    static Persistent<String> defineProperty;
     static Persistent<String> delete_;
-    static Persistent<String> enumerate;
     static Persistent<String> fix;
-    static Persistent<String> get;
-    static Persistent<String> set;
+    // derived traps
     static Persistent<String> has;
     static Persistent<String> hasOwn;
-    static Persistent<String> enumerateOwn;
+    static Persistent<String> get;
+    static Persistent<String> set;
+    static Persistent<String> enumerate;
+    static Persistent<String> keys;
+    // string identifiers
     static Persistent<String> callTrap;
     static Persistent<String> constructorTrap;
     static Persistent<String> value;

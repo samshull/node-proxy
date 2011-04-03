@@ -33,20 +33,23 @@
 #include "./node-proxy.h"
 
 namespace v8 {  // this was much easier
-
+    // fundamental traps
 Persistent<String> NodeProxy::getOwnPropertyDescriptor;
 Persistent<String> NodeProxy::getPropertyDescriptor;
-Persistent<String> NodeProxy::defineProperty;
 Persistent<String> NodeProxy::getOwnPropertyNames;
+Persistent<String> NodeProxy::getPropertyNames;
+Persistent<String> NodeProxy::defineProperty;
 Persistent<String> NodeProxy::delete_;
-Persistent<String> NodeProxy::enumerate;
 Persistent<String> NodeProxy::fix;
-Persistent<String> NodeProxy::get;
-Persistent<String> NodeProxy::set;
+    // derived traps
 Persistent<String> NodeProxy::has;
 Persistent<String> NodeProxy::hasOwn;
-Persistent<String> NodeProxy::enumerateOwn;
-Persistent<String> NodeProxy::NodeProxy::callTrap;
+Persistent<String> NodeProxy::get;
+Persistent<String> NodeProxy::set;
+Persistent<String> NodeProxy::enumerate;
+Persistent<String> NodeProxy::keys;
+    // string identifiers
+Persistent<String> NodeProxy::callTrap;
 Persistent<String> NodeProxy::constructorTrap;
 Persistent<String> NodeProxy::value;
 Persistent<String> NodeProxy::writable;
@@ -67,6 +70,7 @@ Persistent<String> NodeProxy::isExtensible;
 Persistent<String> NodeProxy::isProxy;
 Persistent<String> NodeProxy::hidden;
 Persistent<String> NodeProxy::hiddenPrivate;
+
 /**
  *
  *
@@ -400,11 +404,6 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
 
     // cloning here allows maintaining reference to original functions
     proxyHandler = args[0]->ToObject()->Clone();
-    Handle<Value> valid = ValidateProxyHandler(proxyHandler);
-
-    if (!valid->IsBoolean()) {
-        return value;
-    }
 
     if (args.Length() > 1 && !args[1]->IsObject()) {
         return THR_TYPE_ERROR(
@@ -440,7 +439,7 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
     // indexed property handlers
     temp->SetIndexedPropertyHandler(GetIndexedProperty,
                                     SetIndexedProperty,
-                                    
+
 // different versions of V8 require different return types
 // 0.2.0 is where the switch occurred
 #ifndef NODE_MAJOR_VERSION
@@ -488,11 +487,6 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
     }
     // cloning here allows maintaining reference to original functions
     Local<Object> proxyHandler = args[0]->ToObject()->Clone();
-    Handle<Value> valid = ValidateProxyHandler(proxyHandler);
-
-    if (!valid->IsBoolean()) {
-        return value;
-    }
 
     if (!args[1]->IsFunction()) {
         return THR_TYPE_ERROR(
@@ -515,10 +509,7 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
     proxyHandler->SetHiddenValue(NodeProxy::sealed, False());
     proxyHandler->SetHiddenValue(NodeProxy::frozen, False());
 
-  //Local<FunctionTemplate> temp = FunctionTemplate::New(New, proxyHandler);
-  //temp->Set("__crazy", proxyHandler);
-  
-    //Local<ObjectTemplate> instance = temp->InstanceTemplate();
+
   Local<ObjectTemplate> instance = ObjectTemplate::New();
   instance->SetCallAsFunctionHandler(New, proxyHandler);
   instance->SetInternalFieldCount(1);
@@ -551,70 +542,16 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 #endif
                                         DeleteIndexedProperty);
 
-/*  
-  Local<ObjectTemplate> proto = temp->PrototypeTemplate();
-  proto->SetInternalFieldCount(1);
-  
-
-    proto->SetNamedPropertyHandler(GetNamedProperty,
-                                      SetNamedProperty,
-// different versions of V8 require different return types
-// 0.1.97 is where the switch occurred in v8,
-// but NODE_*_VERSION wasn't added until 0.1.100
-#ifndef NODE_MAJOR_VERSION
-                                      QueryNamedProperty,
-#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
-                                      QueryNamedPropertyInteger,
-#else
-                                      QueryNamedProperty,
-#endif
-                                      DeleteNamedProperty,
-                                      EnumerateNamedProperties,
-                    proxyHandler);
-
-    proto->SetIndexedPropertyHandler(GetIndexedProperty,
-                                        SetIndexedProperty,
-// different versions of V8 require different return types
-// 0.2.0 is where the switch occurred
-#ifndef NODE_MAJOR_VERSION
-                                      QueryIndexedProperty,
-#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
-                                      QueryIndexedPropertyInteger,
-#else
-                                      QueryIndexedProperty,
-#endif
-                                        DeleteIndexedProperty,
-                                        0,
-                    proxyHandler);
-*/
   assert(!V8::IsDead());
   Local<Object> fn = instance->NewInstance();
   fn->SetPrototype(args[1]->ToObject()->GetPrototype());
-/*  
-  Local<Function> fn = temp->GetFunction();
 
-  assert(fn->IsFunction());
-  
-  Local<Object> inst = fn->NewInstance();
-  //Local<Function> fn( temp->GetFunction() );
-  //Local<Object> fn = instance->NewInstance();
-  
-  //assert(temp->HasInstance(inst));
-
-    // optionally pass the name of your function
-    // attached to the ProxyHandler Object
-    if (proxyHandler->Has(NodeProxy::name) &&
-        proxyHandler->Get(NodeProxy::name)->IsString()) {
-        fn->SetName(proxyHandler->Get(NodeProxy::name)->ToString());
-    }
-*/  
-  
   assert(fn->HasNamedLookupInterceptor());
   assert(fn->HasIndexedLookupInterceptor());
   assert(fn->InternalFieldCount() > 0);
-  
+
   fn->SetInternalField(0, proxyHandler);
-  
+
     return fn;
 }
 
@@ -890,14 +827,12 @@ Handle<Value> NodeProxy::DefineProperty(const Arguments& args) {
         }
         return False();
     }
-  
-  
 
     Local<Function> def = Local<Function>::Cast(
                                     handler->Get(NodeProxy::defineProperty));
-  
+
     Local<Value> argv[2] = {args[1], args[2]->ToObject()};
-            
+
     return def->Call(obj, 2, argv)->ToBoolean();
 }
 
@@ -930,7 +865,7 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
     }
 
     Local<Value> temp = obj->GetInternalField(0);
-  
+
     if (!temp.IsEmpty() && temp->IsObject()) {
         Local<Object> props = args[1]->ToObject();
         Local<Object> handler = temp->ToObject();
@@ -978,7 +913,7 @@ Handle<Value> NodeProxy::DefineProperties(const Arguments& args) {
         TryCatch firstTry;
         for (;i < l; ++i) {
             Local<Value> name = names->Get(i);
-      
+
             if (extensible || obj->Has(name->ToString())) {
         Local<Value> pd = props->Get(name->ToString());
         Local<Value> argv[2] = {name, pd};
@@ -1767,27 +1702,29 @@ void NodeProxy::Init(Handle<Object> target) {
         PROXY_NODE_PSYMBOL("getOwnPropertyDescriptor");
     NodeProxy::getPropertyDescriptor =
         PROXY_NODE_PSYMBOL("getPropertyDescriptor");
-    NodeProxy::defineProperty =
-        PROXY_NODE_PSYMBOL("defineProperty");
     NodeProxy::getOwnPropertyNames =
         PROXY_NODE_PSYMBOL("getOwnPropertyNames");
+    NodeProxy::getPropertyNames =
+        PROXY_NODE_PSYMBOL("getPropertyNames");
+    NodeProxy::defineProperty =
+        PROXY_NODE_PSYMBOL("defineProperty");
     NodeProxy::delete_ =
         PROXY_NODE_PSYMBOL("delete");
-    NodeProxy::enumerate =
-        PROXY_NODE_PSYMBOL("enumerate");
     NodeProxy::fix =
         PROXY_NODE_PSYMBOL("fix");
 // optional properties
-    NodeProxy::get =
-        PROXY_NODE_PSYMBOL("get");
-    NodeProxy::set =
-        PROXY_NODE_PSYMBOL("set");
     NodeProxy::has =
         PROXY_NODE_PSYMBOL("has");
     NodeProxy::hasOwn =
         PROXY_NODE_PSYMBOL("hasOwn");
-    NodeProxy::enumerateOwn =
-        PROXY_NODE_PSYMBOL("enumerateOwn");
+    NodeProxy::get =
+        PROXY_NODE_PSYMBOL("get");
+    NodeProxy::set =
+        PROXY_NODE_PSYMBOL("set");
+    NodeProxy::enumerate =
+        PROXY_NODE_PSYMBOL("enumerate");
+    NodeProxy::keys =
+        PROXY_NODE_PSYMBOL("keys");
 // createFunction
     NodeProxy::callTrap =
         PROXY_NODE_PSYMBOL("callTrap");
