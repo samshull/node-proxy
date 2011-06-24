@@ -215,6 +215,9 @@ Handle<Value> NodeProxy::IsProxy(const Arguments& args) {
   return False();
 }
 
+Persistent<ObjectTemplate> ObjectCreator ;
+Persistent<ObjectTemplate> FunctionCreator ;
+
 /**
  *  Create an object that has ProxyHandler intercepts attached and
  *  optionally implements the prototype of another object
@@ -255,42 +258,7 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
   proxyHandler->SetHiddenValue(NodeProxy::sealed, False());
   proxyHandler->SetHiddenValue(NodeProxy::frozen, False());
 
-  Local<ObjectTemplate> temp = ObjectTemplate::New();
-
-  temp->SetInternalFieldCount(1);
-
-  // named property handlers
-  temp->SetNamedPropertyHandler(GetNamedProperty,
-                  SetNamedProperty,
-// different versions of V8 require different return types
-// 0.1.97 is where the switch occurred in v8,
-// but NODE_*_VERSION wasn't added until 0.1.100
-#ifndef NODE_MAJOR_VERSION
-                  QueryNamedProperty,
-#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
-                  QueryNamedPropertyInteger,
-#else
-                  QueryNamedProperty,
-#endif
-                  DeleteNamedProperty,
-                  EnumerateNamedProperties);
-
-  // indexed property handlers
-  temp->SetIndexedPropertyHandler(GetIndexedProperty,
-                  SetIndexedProperty,
-
-// different versions of V8 require different return types
-// 0.2.0 is where the switch occurred
-#ifndef NODE_MAJOR_VERSION
-                  QueryIndexedProperty,
-#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
-                  QueryIndexedPropertyInteger,
-#else
-                  QueryIndexedProperty,
-#endif
-                  DeleteIndexedProperty);
-
-  Local<Object> instance = temp->NewInstance();
+  Local<Object> instance = ObjectCreator->NewInstance();
 
   instance->SetInternalField(0, proxyHandler);
 
@@ -298,7 +266,7 @@ Handle<Value> NodeProxy::Create(const Arguments& args) {
     instance->SetPrototype(args[1]);
   }
 
-  return instance;
+  return scope.Close(instance);
 }
 
 /**
@@ -347,41 +315,9 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
   proxyHandler->SetHiddenValue(NodeProxy::sealed, False());
   proxyHandler->SetHiddenValue(NodeProxy::frozen, False());
 
-
-  Local<ObjectTemplate> instance = ObjectTemplate::New();
-  instance->SetCallAsFunctionHandler(New, proxyHandler);
-  instance->SetInternalFieldCount(1);
-
-  instance->SetNamedPropertyHandler(GetNamedProperty,
-                    SetNamedProperty,
-// different versions of V8 require different return types
-// 0.1.97 is where the switch occurred in v8,
-// but NODE_*_VERSION wasn't added until 0.1.100
-#ifndef NODE_MAJOR_VERSION
-                    QueryNamedProperty,
-#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
-                    QueryNamedPropertyInteger,
-#else
-                    QueryNamedProperty,
-#endif
-                    DeleteNamedProperty,
-                    EnumerateNamedProperties);
-
-  instance->SetIndexedPropertyHandler(GetIndexedProperty,
-                    SetIndexedProperty,
-// different versions of V8 require different return types
-// 0.2.0 is where the switch occurred
-#ifndef NODE_MAJOR_VERSION
-                    QueryIndexedProperty,
-#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
-                    QueryIndexedPropertyInteger,
-#else
-                    QueryIndexedProperty,
-#endif
-                    DeleteIndexedProperty);
-
+  
   assert(!V8::IsDead());
-  Local<Object> fn = instance->NewInstance();
+  Local<Object> fn = FunctionCreator->NewInstance();
   fn->SetPrototype(args[1]->ToObject()->GetPrototype());
 
   assert(fn->HasNamedLookupInterceptor());
@@ -390,7 +326,7 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
 
   fn->SetInternalField(0, proxyHandler);
 
-  return fn;
+  return scope.Close(fn);
 }
 
 /**
@@ -784,10 +720,10 @@ Handle<Value> NodeProxy::New(const Arguments& args) {
                 "argument to be intialized by Proxy");
   }
 
-  Local<Value> info, ret,
-         data = args.Callee()->InternalFieldCount() > 0 ?
-      args.Callee()->GetInternalField(0) : 
-      args.Data();
+  Local<Value> info, ret, data =  args.Holder()->GetInternalField(0) ;
+//         data = args.Callee()->InternalFieldCount() > 0 ?
+//      args.Callee()->GetInternalField(0) : 
+//      args.Data();
 
   if (data.IsEmpty() || !data->IsObject()) {
     return THREXC("Invalid reference to Proxy#constructor");
@@ -1560,6 +1496,79 @@ void NodeProxy::Init(Handle<Object> target) {
     FunctionTemplate::New(IsProxy)->GetFunction();
   hidden->SetName(NodeProxy::isProxy);
   target->Set(NodeProxy::isProxy, isProxy_, DontDelete);
+
+  Local<ObjectTemplate> temp = ObjectTemplate::New();
+  
+  temp->SetInternalFieldCount(1);
+
+  // named property handlers
+  temp->SetNamedPropertyHandler(GetNamedProperty,
+                  SetNamedProperty,
+// different versions of V8 require different return types
+// 0.1.97 is where the switch occurred in v8,
+// but NODE_*_VERSION wasn't added until 0.1.100
+#ifndef NODE_MAJOR_VERSION
+                  QueryNamedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
+                  QueryNamedPropertyInteger,
+#else
+                  QueryNamedProperty,
+#endif
+                  DeleteNamedProperty,
+                  EnumerateNamedProperties);
+
+  // indexed property handlers
+  temp->SetIndexedPropertyHandler(GetIndexedProperty,
+                  SetIndexedProperty,
+
+// different versions of V8 require different return types
+// 0.2.0 is where the switch occurred
+#ifndef NODE_MAJOR_VERSION
+                  QueryIndexedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
+                  QueryIndexedPropertyInteger,
+#else
+                  QueryIndexedProperty,
+#endif
+                  DeleteIndexedProperty);
+
+  ObjectCreator = Persistent<ObjectTemplate>::New(temp) ;
+
+  Local<ObjectTemplate> instance = ObjectTemplate::New();
+  instance->SetCallAsFunctionHandler(New, Undefined());
+  instance->SetInternalFieldCount(1);
+
+  instance->SetNamedPropertyHandler(GetNamedProperty,
+                    SetNamedProperty,
+// different versions of V8 require different return types
+// 0.1.97 is where the switch occurred in v8,
+// but NODE_*_VERSION wasn't added until 0.1.100
+#ifndef NODE_MAJOR_VERSION
+                    QueryNamedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 1, 98)
+                    QueryNamedPropertyInteger,
+#else
+                    QueryNamedProperty,
+#endif
+                    DeleteNamedProperty,
+                    EnumerateNamedProperties);
+
+  instance->SetIndexedPropertyHandler(GetIndexedProperty,
+                    SetIndexedProperty,
+// different versions of V8 require different return types
+// 0.2.0 is where the switch occurred
+#ifndef NODE_MAJOR_VERSION
+                    QueryIndexedProperty,
+#elif PROXY_NODE_VERSION_AT_LEAST(0, 2, 0)
+                    QueryIndexedPropertyInteger,
+#else
+                    QueryIndexedProperty,
+#endif
+                    DeleteIndexedProperty);
+
+  FunctionCreator = Persistent<ObjectTemplate>::New(instance) ;
+  
+  scope.Close(Undefined());
 }
 
 }  //  end namespace
