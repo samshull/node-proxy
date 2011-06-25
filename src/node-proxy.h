@@ -94,6 +94,8 @@ class NodeProxy {
   static Persistent<String> isProxy;
   static Persistent<String> hidden;
   static Persistent<String> hiddenPrivate;
+  static Persistent<ObjectTemplate> ObjectCreator;
+  static Persistent<ObjectTemplate> FunctionCreator;
   static void Init(Handle<Object> target);
 
   protected:

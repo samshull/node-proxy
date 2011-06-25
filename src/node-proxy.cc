@@ -71,6 +71,9 @@ Persistent<String> NodeProxy::isProxy;
 Persistent<String> NodeProxy::hidden;
 Persistent<String> NodeProxy::hiddenPrivate;
 
+Persistent<ObjectTemplate> ObjectCreator;
+Persistent<ObjectTemplate> FunctionCreator;
+
 /**
  *
  *
@@ -215,9 +218,6 @@ Handle<Value> NodeProxy::IsProxy(const Arguments& args) {
   return False();
 }
 
-Persistent<ObjectTemplate> ObjectCreator ;
-Persistent<ObjectTemplate> FunctionCreator ;
-
 /**
  *  Create an object that has ProxyHandler intercepts attached and
  *  optionally implements the prototype of another object
@@ -315,14 +315,9 @@ Handle<Value> NodeProxy::CreateFunction(const Arguments& args) {
   proxyHandler->SetHiddenValue(NodeProxy::sealed, False());
   proxyHandler->SetHiddenValue(NodeProxy::frozen, False());
 
-  
-  assert(!V8::IsDead());
+
   Local<Object> fn = FunctionCreator->NewInstance();
   fn->SetPrototype(args[1]->ToObject()->GetPrototype());
-
-  assert(fn->HasNamedLookupInterceptor());
-  assert(fn->HasIndexedLookupInterceptor());
-  assert(fn->InternalFieldCount() > 0);
 
   fn->SetInternalField(0, proxyHandler);
 
@@ -720,10 +715,7 @@ Handle<Value> NodeProxy::New(const Arguments& args) {
                 "argument to be intialized by Proxy");
   }
 
-  Local<Value> info, ret, data =  args.Holder()->GetInternalField(0) ;
-//         data = args.Callee()->InternalFieldCount() > 0 ?
-//      args.Callee()->GetInternalField(0) : 
-//      args.Data();
+  Local<Value> info, ret, data =  args.Holder()->GetInternalField(0);
 
   if (data.IsEmpty() || !data->IsObject()) {
     return THREXC("Invalid reference to Proxy#constructor");
@@ -1498,7 +1490,7 @@ void NodeProxy::Init(Handle<Object> target) {
   target->Set(NodeProxy::isProxy, isProxy_, DontDelete);
 
   Local<ObjectTemplate> temp = ObjectTemplate::New();
-  
+
   temp->SetInternalFieldCount(1);
 
   // named property handlers
@@ -1567,7 +1559,7 @@ void NodeProxy::Init(Handle<Object> target) {
                     DeleteIndexedProperty);
 
   FunctionCreator = Persistent<ObjectTemplate>::New(instance) ;
-  
+
   scope.Close(Undefined());
 }
 
