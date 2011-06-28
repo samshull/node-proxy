@@ -71,8 +71,8 @@ Persistent<String> NodeProxy::isProxy;
 Persistent<String> NodeProxy::hidden;
 Persistent<String> NodeProxy::hiddenPrivate;
 
-Persistent<ObjectTemplate> ObjectCreator;
-Persistent<ObjectTemplate> FunctionCreator;
+Persistent<ObjectTemplate> NodeProxy::ObjectCreator;
+Persistent<ObjectTemplate> NodeProxy::FunctionCreator;
 
 /**
  *
