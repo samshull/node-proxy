@@ -1,7 +1,7 @@
 /*jslint forin: true, onevar: true, immed: true */
 
 (function () {
-  require.paths.unshift(__dirname + "/../lib");
+  process.env['NODE_PATH'] += ':' + __dirname + "/../lib";
 
   var sys = require('sys'),
     assert = require('assert'),
