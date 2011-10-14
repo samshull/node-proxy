@@ -16,7 +16,7 @@
         }
     ],
     "bugs"                 : {
-        "web"              : "http://github.com/samshull/node-proxy/issues"
+        "url"              : "http://github.com/samshull/node-proxy/issues"
     },
     "implements"           : [
         "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
