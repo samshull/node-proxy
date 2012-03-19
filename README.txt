@@ -1,7 +1,7 @@
 node-proxy is an implementation of Harmony Proxies http://wiki.ecmascript.org/doku.php?id=harmony:proxies
 that allows the developer to create "catch-all" property handlers for an object or a function in node.js.
 
-Author: Sam Shull
+Author: <a href="https://github.com/samshull/google-profile-experiment" rel="author">Sam Shull</a>
 Repository: http://github.com/samshull/node-proxy
 Issues: http://github.com/samshull/node-proxy/issues
 
