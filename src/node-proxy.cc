@@ -398,7 +398,7 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 
   // Harmony Proxy handling of fix
   Local<Function> fix = Local<Function>::Cast(handler->Get(NodeProxy::fix));
-  Local<Value> argv[0];
+  Local<Value>* argv;
 
   Local<Value> pieces = fix->Call(args[0]->ToObject(), 0, argv);
 
@@ -1184,7 +1184,7 @@ Handle<Array> NodeProxy::EnumerateNamedProperties(const AccessorInfo &info) {
     }
 
     Local<Object> handler = data->ToObject();
-    Local<Value> argv[0];
+    Local<Value>* argv;
 
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
@@ -1572,3 +1572,5 @@ void NodeProxy::Init(Handle<Object> target) {
 extern "C" void init(v8::Handle<v8::Object> target) {
   v8::NodeProxy::Init(target);
 }
+
+NODE_MODULE(nodeproxy, init);
