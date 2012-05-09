@@ -30,8 +30,10 @@
             "url"          : "http://github.com/samshull/node-proxy"
         }
     ],
-    "main"                 : "./lib/node-proxy.node",
+    "main"                 : "./build/Release/nodeproxy.node",
     "scripts"              : {
-        "install"          : "make"
+		"preinstall": "node-gyp configure",
+		"install": "node-gyp build",
+		"preuninstall": "node-gyp clean"
     }
 }
