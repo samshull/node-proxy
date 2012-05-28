@@ -398,8 +398,12 @@ Handle<Value> NodeProxy::Freeze(const Arguments& args) {
 
   // Harmony Proxy handling of fix
   Local<Function> fix = Local<Function>::Cast(handler->Get(NodeProxy::fix));
+#ifdef _WIN32
+  // On windows you get "error C2466: cannot allocate an array of constant size 0" and we use a pointer
+  Local<Value>* argv;
+#else
   Local<Value> argv[0];
-
+#endif
   Local<Value> pieces = fix->Call(args[0]->ToObject(), 0, argv);
 
   if (pieces.IsEmpty() || !pieces->IsObject()) {
@@ -1184,7 +1188,12 @@ Handle<Array> NodeProxy::EnumerateNamedProperties(const AccessorInfo &info) {
     }
 
     Local<Object> handler = data->ToObject();
+#ifdef _WIN32
+    // On windows you get "error C2466: cannot allocate an array of constant size 0" and we use a pointer
+    Local<Value>* argv;
+#else
     Local<Value> argv[0];
+#endif
 
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
@@ -1572,3 +1581,5 @@ void NodeProxy::Init(Handle<Object> target) {
 extern "C" void init(v8::Handle<v8::Object> target) {
   v8::NodeProxy::Init(target);
 }
+/* Required by windows Node version to detect the entry method */
+NODE_MODULE(nodeproxy, init);

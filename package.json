@@ -22,7 +22,7 @@
         "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
     ],
     "engines"              : {
-        "node"             : ">=0.1.103"
+        "node"             : ">=0.6"
     },
     "repositories"         : [
         {
@@ -30,8 +30,9 @@
             "url"          : "http://github.com/samshull/node-proxy"
         }
     ],
-    "main"                 : "./lib/node-proxy.node",
+    "main"                 : "./lib/node-proxy.js",
     "scripts"              : {
-        "install"          : "make"
+        "install"          : "node-gyp configure build"
+        "test"             : "node test/test.js"
     }
 }
