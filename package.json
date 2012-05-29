@@ -8,7 +8,7 @@
         "overload",
         "__noSuchMethod__"
     ],
-    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>" ],
+    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>", "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>" ],
     "licenses"             : [
         {
             "type"         : "MIT",
@@ -23,6 +23,9 @@
     ],
     "engines"              : {
         "node"             : ">=0.6"
+    },
+	"dependencies"         : {
+        "node-gyp"         : "*"
     },
     "repositories"         : [
         {
