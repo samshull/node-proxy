@@ -32,7 +32,7 @@
     ],
     "main"                 : "./lib/node-proxy.js",
     "scripts"              : {
-        "install"          : "node-gyp configure build"
+        "install"          : "node-gyp configure build",
         "test"             : "node test/test.js"
     }
 }
