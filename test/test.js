@@ -3,11 +3,11 @@
 (function () {
   process.env['NODE_PATH'] += ':' + __dirname + "/../lib";
 
-  var sys = require('sys'),
+  var sys = require('util'),
     assert = require('assert'),
     undef,
     called, p,
-    Proxy = require("node-proxy"),
+    Proxy = require("../lib/node-proxy.js"),
     createProxyFunction = function(handlers, callTrap, constructorTrap) {
       called = "createProxyFunction";
 

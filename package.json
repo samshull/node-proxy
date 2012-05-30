@@ -8,7 +8,7 @@
         "overload",
         "__noSuchMethod__"
     ],
-    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>" ],
+    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>", "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>" ],
     "licenses"             : [
         {
             "type"         : "MIT",
@@ -22,7 +22,8 @@
         "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
     ],
     "engines"              : {
-        "node"             : ">=0.1.103"
+        "node"             : ">=0.6",
+		"npm"              : ">= 1.1.17"
     },
     "repositories"         : [
         {
@@ -30,8 +31,9 @@
             "url"          : "http://github.com/samshull/node-proxy"
         }
     ],
-    "main"                 : "./lib/node-proxy.node",
+    "main"                 : "./lib/node-proxy.js",
     "scripts"              : {
-        "install"          : "make"
+        "install"          : "node-gyp configure build",
+        "test"             : "node test/test.js"
     }
 }
