@@ -22,10 +22,8 @@
         "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
     ],
     "engines"              : {
-        "node"             : ">=0.6"
-    },
-	"dependencies"         : {
-        "node-gyp"         : "*"
+        "node"             : ">=0.6",
+		"npm"              : ">= 1.1.17"
     },
     "repositories"         : [
         {
