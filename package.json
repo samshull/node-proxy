@@ -1,6 +1,6 @@
 {
     "name"                 : "node-proxy",
-    "version"              : "0.5.2",
+    "version"              : "0.6.0",
     "description"          : "A module for node implementing __noSuchMethod__-type handlers, such as object overloading, as part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
     "keywords"             : [
         "interceptor",
@@ -23,7 +23,7 @@
     ],
     "engines"              : {
         "node"             : ">=0.6",
-		"npm"              : ">= 1.1.17"
+        "npm"              : ">= 1.1.17"
     },
     "repositories"         : [
         {
