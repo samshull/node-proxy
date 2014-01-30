@@ -9,7 +9,8 @@
         "__noSuchMethod__"
     ],
     "dependencies"         : {
-        "bindings"         : "1.1.x"
+        "bindings"         : "1.1.x",
+        "nan"              : "0.8.x"
     },
     "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>", "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>" ],
     "licenses"             : [

@@ -37,13 +37,10 @@
 #include <v8.h>
 #include <node.h>
 #include <node_version.h>
+#include "nan.h"
 
-#define THREXCW(str) ThrowException(Exception::Error(str))
-#define THREXC(str) THREXCW(String::New(str))
-#define THR_TYPE_ERROR(str) \
-  ThrowException(Exception::TypeError(String::New(str)))
-#define PROXY_NODE_PSYMBOL(s) \
-  Persistent<String>::New(String::NewSymbol(s))
+using namespace v8;
+using namespace node;
 
 // had to redefine NODE_VERSION_AT_LEAST here because of missing parenthesis
 #define PROXY_NODE_VERSION_AT_LEAST(major, minor, patch) \
@@ -52,48 +49,8 @@
     || ((major) == NODE_MAJOR_VERSION && (minor) == NODE_MINOR_VERSION && \
     (patch) <= NODE_PATCH_VERSION))
 
-// using namespace v8;
-namespace v8 {
-
 class NodeProxy {
   public:
-  // fundamental traps
-  static Persistent<String> getOwnPropertyDescriptor;
-  static Persistent<String> getPropertyDescriptor;
-  static Persistent<String> getOwnPropertyNames;
-  static Persistent<String> getPropertyNames;
-  static Persistent<String> defineProperty;
-  static Persistent<String> delete_;
-  static Persistent<String> fix;
-  // derived traps
-  static Persistent<String> has;
-  static Persistent<String> hasOwn;
-  static Persistent<String> get;
-  static Persistent<String> set;
-  static Persistent<String> enumerate;
-  static Persistent<String> keys;
-  // string identifiers
-  static Persistent<String> callTrap;
-  static Persistent<String> constructorTrap;
-  static Persistent<String> value;
-  static Persistent<String> writable;
-  static Persistent<String> enumerable;
-  static Persistent<String> configurable;
-  static Persistent<String> name;
-  static Persistent<String> trapping;
-  static Persistent<String> sealed;
-  static Persistent<String> frozen;
-  static Persistent<String> extensible;
-  static Persistent<String> seal;
-  static Persistent<String> freeze;
-  static Persistent<String> preventExtensions;
-  static Persistent<String> isTrapping;
-  static Persistent<String> isSealed;
-  static Persistent<String> isFrozen;
-  static Persistent<String> isExtensible;
-  static Persistent<String> isProxy;
-  static Persistent<String> hidden;
-  static Persistent<String> hiddenPrivate;
   static Persistent<ObjectTemplate> ObjectCreator;
   static Persistent<ObjectTemplate> FunctionCreator;
   static void Init(Handle<Object> target);
@@ -104,62 +61,38 @@ class NodeProxy {
   static Handle<Integer>
     GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd);
   static Local<Value> CorrectPropertyDescriptor(Local<Object> pd);
-  static Handle<Value> ValidateProxyHandler(Local<Object> handler);
-  static Handle<Value> Clone(const Arguments& args);
-  static Handle<Value> Hidden(const Arguments& args);
-  static Handle<Value> Create(const Arguments& args);
-  static Handle<Value> SetPrototype(const Arguments& args);
-  static Handle<Value> CreateFunction(const Arguments& args);
-  static Handle<Value> Freeze(const Arguments& args);
-  static Handle<Value> IsLocked(const Arguments& args);
-  static Handle<Value> IsProxy(const Arguments& args);
-  static Handle<Value> GetOwnPropertyDescriptor(const Arguments& args);
-  static Handle<Value> DefineProperty(const Arguments& args);
-  static Handle<Value> DefineProperties(const Arguments& args);
-  static Handle<Value> New(const Arguments& args);
-  static Handle<Value>
-    GetNamedProperty(Local<String> name, const AccessorInfo &info);
-  static Handle<Value>
-    SetNamedProperty(Local<String> name,
-             Local<Value> value,
-             const AccessorInfo &info);
-  static Handle<Boolean>
-    QueryNamedProperty(Local<String> name,
-               const AccessorInfo &info);
-  static Handle<Integer>
-    QueryNamedPropertyInteger(Local<String> name,
-                  const AccessorInfo &info);
-  static Handle<Boolean>
-    DeleteNamedProperty(Local<String> name,
-              const AccessorInfo &info);
-  static Handle<Array>
-    EnumerateNamedProperties(const AccessorInfo  &info);
-  static Handle<Value>
-    GetIndexedProperty(uint32_t index,
-               const AccessorInfo &info);
-  static Handle<Value>
-    SetIndexedProperty(uint32_t index,
-               Local<Value> value,
-               const AccessorInfo &info);
-  static Handle<Boolean>
-    QueryIndexedProperty(uint32_t index,
-               const AccessorInfo &info);
-  static Handle<Integer>
-    QueryIndexedPropertyInteger(uint32_t index,
-                  const AccessorInfo &info);
-  static Handle<Boolean>
-    DeleteIndexedProperty(uint32_t index,
-                const AccessorInfo &info);
+  static NAN_METHOD(ValidateProxyHandler);
+  static NAN_METHOD(Clone);
+  static NAN_METHOD(Hidden);
+  static NAN_METHOD(Create);
+  static NAN_METHOD(SetPrototype);
+  static NAN_METHOD(CreateFunction);
+  static NAN_METHOD(Freeze);
+  static NAN_METHOD(IsLocked);
+  static NAN_METHOD(IsProxy);
+  static NAN_METHOD(GetOwnPropertyDescriptor);
+  static NAN_METHOD(DefineProperty);
+  static NAN_METHOD(DefineProperties);
+  static NAN_METHOD(New);
+  static NAN_PROPERTY_GETTER(GetNamedProperty);
+  static NAN_PROPERTY_SETTER(SetNamedProperty);
+  static NAN_PROPERTY_QUERY(QueryNamedPropertyInteger);
+  static NAN_PROPERTY_DELETER(DeleteNamedProperty);
+  static NAN_PROPERTY_ENUMERATOR(EnumerateNamedProperties);
+  static NAN_INDEX_GETTER(GetIndexedProperty);
+  static NAN_INDEX_SETTER(SetIndexedProperty);
+  static NAN_INDEX_QUERY(QueryIndexedPropertyInteger);
+  static NAN_INDEX_DELETER(DeleteIndexedProperty);
 
-  static Local<Value> CallPropertyDescriptorGet(Local<Value> descriptor,
+  static NAN_INLINE(Local<Value> CallPropertyDescriptorGet(Local<Value> descriptor,
               Handle<Object> context,
-              Local<Value> args[1]);
-  static Local<Value> CallPropertyDescriptorSet(Local<Value> descriptor,
+              Local<Value> args[1]));
+  static NAN_INLINE(Local<Value> CallPropertyDescriptorSet(Local<Value> descriptor,
               Handle<Object> context,
               Local<Value> name,
-              Local<Value> value);
+              Local<Value> value));
 };
-}
+
 
 extern "C" void init(v8::Handle<v8::Object> target);
 
