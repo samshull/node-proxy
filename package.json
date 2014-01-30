@@ -29,12 +29,10 @@
         "node"             : ">=0.6",
         "npm"              : ">= 1.1.17"
     },
-    "repositories"         : [
-        {
-            "type"         : "git",
-            "url"          : "http://github.com/samshull/node-proxy"
-        }
-    ],
+    "repository"           : {
+        "type"             : "git",
+        "url"              : "http://github.com/samshull/node-proxy"
+    },
     "main"                 : "./lib/node-proxy.js",
     "scripts"              : {
         "install"          : "node-gyp configure build",
