@@ -3,8 +3,7 @@
 (function () {
   process.env['NODE_PATH'] += ':' + __dirname + "/../lib";
 
-  var sys = require('util'),
-    assert = require('assert'),
+  var assert = require('assert'),
     undef,
     called, p,
     Proxy = require("../lib/node-proxy.js"),
@@ -111,8 +110,8 @@
         },
         has:function (name){
           called = "has";
-          //sys.puts("has called on: "+name);
-          //sys.puts(name in handlers)
+          //console.log("has called on: "+name);
+          //console.log(name in handlers)
           return (name in handlers);
         },
         hasOwn:function (name){
@@ -121,7 +120,7 @@
         },
         get:function (receiver, name){
           called = "get";
-          //sys.puts(arguments.callee.caller)
+          //console.log(arguments.callee.caller)
           if (!(name in handlers)) {
             return undef;
           }
@@ -542,11 +541,11 @@
       }
     }, section, sectionName, test, testIndex, sectionIndex = 0, totalTests = 0, passedTests = 0, failedTests = 0;
 
-  sys.puts("Running tests...\n");
+  console.log("Running tests...\n");
 
   for (sectionName in tests) {
     ++sectionIndex;
-    sys.puts("\n" + sectionIndex + ": "+ sectionName);
+    console.log("\n" + sectionIndex + ": "+ sectionName);
 
     testIndex = 0;
     section = tests[sectionName];
@@ -554,22 +553,22 @@
     for (test in section) {
       ++totalTests;
       ++testIndex;
-      sys.print("  " + test + ": ");
+      process.stdout.write("  " + test + ": ");
 
       try{
         section[test]();
         ++passedTests;
-        sys.puts("PASS");
+        console.log("PASS");
       } catch(e) {
         ++failedTests;
-        sys.puts("FAIL: "+ e.message);
+        console.log("FAIL: "+ e.message);
       }
     }
   }
 
-  sys.puts("\nPassed " + passedTests + " of " + totalTests + " tests");
-  sys.puts("\nFailed " + failedTests + " of " + totalTests + " tests");
-  sys.puts("");
+  console.log("\nPassed " + passedTests + " of " + totalTests + " tests");
+  console.log("\nFailed " + failedTests + " of " + totalTests + " tests");
+  console.log("");
 
   process.exit(0);
 }());

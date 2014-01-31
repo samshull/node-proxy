@@ -9,9 +9,10 @@
         "__noSuchMethod__"
     ],
     "dependencies"         : {
-        "bindings"         : "1.1.x"
+        "bindings"         : "1.1.x",
+        "nan"              : "0.8.x"
     },
-    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>", "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>" ],
+    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>", "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>", "Kenneth Bentley <mechanicofthesequence@gmail.com>" ],
     "licenses"             : [
         {
             "type"         : "MIT",
@@ -28,12 +29,10 @@
         "node"             : ">=0.6",
         "npm"              : ">= 1.1.17"
     },
-    "repositories"         : [
-        {
-            "type"         : "git",
-            "url"          : "http://github.com/samshull/node-proxy"
-        }
-    ],
+    "repository"           : {
+        "type"             : "git",
+        "url"              : "http://github.com/samshull/node-proxy"
+    },
     "main"                 : "./lib/node-proxy.js",
     "scripts"              : {
         "install"          : "node-gyp configure build",
