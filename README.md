@@ -5,8 +5,6 @@ Author: Sam Shull
 Repository: http://github.com/samshull/node-proxy  
 Issues: http://github.com/samshull/node-proxy/issues  
 
-*** This does not work appropriately in node versions 0.1.100 - 0.1.102. You will need to install node_version.h in $PREFIX/include/node
-
 Methods:
 
 Object create(ProxyHandler handler [, Object proto ] ) throws Error, TypeError
