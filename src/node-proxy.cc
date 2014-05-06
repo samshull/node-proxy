@@ -681,7 +681,6 @@ NAN_METHOD(NodeProxy::DefineProperties) {
  */
 NAN_METHOD(NodeProxy::New) {
   NanScope();
-  printf("NodeProxy::New %d\n", args.Length());
 
   if (args.Callee()->InternalFieldCount() < 1 && args.Data().IsEmpty()) {
     NanThrowTypeError("defineProperty expects first "
@@ -734,7 +733,6 @@ NAN_METHOD(NodeProxy::New) {
  *
  *
  */
-
 NAN_PROPERTY_GETTER(NodeProxy::GetNamedProperty) {
   NanScope();
 
