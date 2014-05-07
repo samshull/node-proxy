@@ -270,7 +270,7 @@ NAN_METHOD(NodeProxy::CreateFunction) {
   // proxyHandler->SetHiddenValue(NanSymbol("constructorTrap"),
   //                args.Length() > 2
   //                ? args[2]
-  //                : NanUndefined());
+  //                : NanNew(NanUndefined()));
   // so, we go ugly-school:
   Local<Value> constructorTrap;
   if(args.Length() > 2) {
@@ -454,7 +454,7 @@ NAN_METHOD(NodeProxy::IsLocked) {
     NanReturnValue(obj->GetHiddenValue(NanSymbol("frozen"))->ToBoolean());
   }
 
-  NanFalse();
+  NanReturnValue(NanFalse());
 }
 
 /**
