@@ -553,12 +553,12 @@ NAN_METHOD(NodeProxy::DefineProperty) {
 
   if (handler->GetHiddenValue(NanSymbol("sealed"))->BooleanValue() ||
   !handler->Has(NanSymbol("defineProperty"))) {
-    NanFalse();
+    NanReturnValue(NanFalse());
   }
 
   if (!handler->GetHiddenValue(NanSymbol("extensible"))->BooleanValue() &&
         !handler->Has(name)) {
-    NanFalse();
+    NanReturnValue(NanFalse());
   }
 
   if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
@@ -568,7 +568,7 @@ NAN_METHOD(NodeProxy::DefineProperty) {
       NanReturnValue(NanNew<Boolean>(
           handler->Set(name, args[2]->ToObject())));
     }
-    NanFalse();
+    NanReturnValue(NanFalse());
   }
 
   Local<Function> def = Local<Function>::Cast(
@@ -614,7 +614,7 @@ NAN_METHOD(NodeProxy::DefineProperties) {
     Local<Object> handler = temp->ToObject();
 
     if (handler->GetHiddenValue(NanSymbol("sealed"))->BooleanValue()) {
-      NanFalse();
+      NanReturnValue(NanFalse());
     }
 
     bool extensible = handler->GetHiddenValue(
@@ -795,7 +795,7 @@ NAN_INLINE Local<Value> NodeProxy::CallPropertyDescriptorGet(Local<Value> descri
     return descriptor->ToObject()->Get(NanSymbol("value"));
   }
 
-  return NanUndefined();
+  return NanNew(NanUndefined());
 }
 
 /**
@@ -906,7 +906,7 @@ NAN_INLINE Local<Value> NodeProxy::CallPropertyDescriptorSet(Local<Value> descri
     }
   }
 
-  return NanUndefined();
+  return NanNew(NanUndefined());
 }
 
 
@@ -1038,7 +1038,7 @@ NAN_PROPERTY_DELETER(NodeProxy::DeleteNamedProperty) {
                  args.Data();
 
     if (!data->IsObject()) {
-      NanFalse();
+      NanReturnValue(NanFalse());
     }
 
     Local<Object> handler = data->ToObject();
@@ -1058,7 +1058,7 @@ NAN_PROPERTY_DELETER(NodeProxy::DeleteNamedProperty) {
           }
         }
       }
-      NanFalse();
+      NanReturnValue(NanFalse());
     }
 
     Local<Value> delete_ = handler->Get(NanSymbol("delete"));
@@ -1384,7 +1384,7 @@ NAN_INDEX_DELETER(NodeProxy::DeleteIndexedProperty) {
                  args.Data();
 
     if (!data->IsObject()) {
-      NanFalse();
+      NanReturnValue(NanFalse());
     }
 
     Local<Integer> idx = NanNew<Integer>(index);
@@ -1405,7 +1405,7 @@ NAN_INDEX_DELETER(NodeProxy::DeleteIndexedProperty) {
           }
         }
       }
-      NanFalse();
+      NanReturnValue(NanFalse());
     }
 
     Local<Value> delete_ = handler->Get(NanSymbol("delete"));
