@@ -265,20 +265,10 @@ NAN_METHOD(NodeProxy::CreateFunction) {
   }
 
   proxyHandler->SetHiddenValue(NanSymbol("callTrap"), args[1]);
-  // weird error....
-  // "error: conditional expression is ambiguous; 'Local<v8::Value>' can be converted to 'Handle<v8::Primitive>' and vice versa"
-  // proxyHandler->SetHiddenValue(NanSymbol("constructorTrap"),
-  //                args.Length() > 2
-  //                ? args[2]
-  //                : NanNew(NanUndefined()));
-  // so, we go ugly-school:
-  Local<Value> constructorTrap;
-  if(args.Length() > 2) {
-    constructorTrap = args[2];
-  } else {
-    constructorTrap = NanUndefined();
-  }
-  proxyHandler->SetHiddenValue(NanSymbol("constructorTrap"), constructorTrap);
+  proxyHandler->SetHiddenValue(NanSymbol("constructorTrap"),
+                 args.Length() > 2
+                 ? args[2]
+                 : NanNew(NanUndefined()).As<Value>());
 
   // manage locking states
   proxyHandler->SetHiddenValue(NanSymbol("trapping"), NanTrue());
