@@ -265,10 +265,13 @@ NAN_METHOD(NodeProxy::CreateFunction) {
   }
 
   proxyHandler->SetHiddenValue(NanSymbol("callTrap"), args[1]);
-  proxyHandler->SetHiddenValue(NanSymbol("constructorTrap"),
-                 args.Length() > 2
-                 ? args[2]
-                 : NanNew(NanUndefined()).As<Value>());
+  Local<Value> constructorTrap;
+  if(args.Length() > 2) {
+    constructorTrap = args[2];
+  } else {
+    constructorTrap = NanNew(NanUndefined());
+  }
+  proxyHandler->SetHiddenValue(NanSymbol("constructorTrap"), constructorTrap);
 
   // manage locking states
   proxyHandler->SetHiddenValue(NanSymbol("trapping"), NanTrue());
@@ -1304,8 +1307,8 @@ NAN_INDEX_QUERY(NodeProxy::QueryIndexedPropertyInteger) {
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
     if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
-      if (handler->Has(idx)) {
-        Local<Value> pd = handler->Get(idx);
+      if (handler->Has(index)) {
+        Local<Value> pd = handler->Get(index);
 
         if (pd->IsObject()) {
           NanReturnValue(GetPropertyAttributeFromPropertyDescriptor(pd->ToObject()));
@@ -1391,7 +1394,7 @@ NAN_INDEX_DELETER(NodeProxy::DeleteIndexedProperty) {
           if (pd_obj->Get(NanSymbol("configurable"))->IsBoolean() &&
               pd_obj->Get(NanSymbol("configurable"))->BooleanValue()
           ) {
-            NanReturnValue(NanNew<Boolean>(handler->Delete(idx)));
+            NanReturnValue(NanNew<Boolean>(handler->Delete(index)));
           }
         }
       }
@@ -1542,7 +1545,7 @@ void NodeProxy::Init(Handle<Object> target) {
                     QueryIndexedPropertyInteger,
                     DeleteIndexedProperty);
 
-  Local<ObjectTemplate> _functionCreator = Handle<ObjectTemplate>(instance);
+  Local<ObjectTemplate> _functionCreator = Local<ObjectTemplate>(instance);
   NanAssignPersistent(FunctionCreator, _functionCreator);
 }
 
