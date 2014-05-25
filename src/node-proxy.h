@@ -84,13 +84,13 @@ class NodeProxy {
   static NAN_INDEX_QUERY(QueryIndexedPropertyInteger);
   static NAN_INDEX_DELETER(DeleteIndexedProperty);
 
-  static NAN_INLINE(Local<Value> CallPropertyDescriptorGet(Local<Value> descriptor,
+  static NAN_INLINE Local<Value> CallPropertyDescriptorGet(Local<Value> descriptor,
               Handle<Object> context,
-              Local<Value> args[1]));
-  static NAN_INLINE(Local<Value> CallPropertyDescriptorSet(Local<Value> descriptor,
+              Local<Value> args[1]);
+  static NAN_INLINE Local<Value> CallPropertyDescriptorSet(Local<Value> descriptor,
               Handle<Object> context,
               Local<Value> name,
-              Local<Value> value));
+              Local<Value> value);
 };
 
 
