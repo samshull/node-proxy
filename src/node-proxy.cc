@@ -129,13 +129,13 @@ NAN_METHOD(NodeProxy::Hidden) {
 
   if (args.Length() < 3) {
     NanReturnValue(obj->GetHiddenValue(
-          String::Concat(NanSymbol("NodeProxy::hidden:"),
+          String::Concat(NanNew<String>("NodeProxy::hidden:"),
                    args[1]->ToString())));
   }
 
   NanReturnValue(
     NanNew<Boolean>(
-        obj->SetHiddenValue(String::Concat(NanSymbol("NodeProxy::hidden:"),
+        obj->SetHiddenValue(String::Concat(NanNew<String>("NodeProxy::hidden:"),
                            args[1]->ToString()),
         args[2])));
 }
@@ -216,10 +216,10 @@ NAN_METHOD(NodeProxy::Create) {
   }
 
   // manage locking states
-  proxyHandler->SetHiddenValue(NanSymbol("trapping"), NanTrue());
-  proxyHandler->SetHiddenValue(NanSymbol("extensible"), NanTrue());
-  proxyHandler->SetHiddenValue(NanSymbol("sealed"), NanFalse());
-  proxyHandler->SetHiddenValue(NanSymbol("frozen"), NanFalse());
+  proxyHandler->SetHiddenValue(NanNew<String>("trapping"), NanTrue());
+  proxyHandler->SetHiddenValue(NanNew<String>("extensible"), NanTrue());
+  proxyHandler->SetHiddenValue(NanNew<String>("sealed"), NanFalse());
+  proxyHandler->SetHiddenValue(NanNew<String>("frozen"), NanFalse());
 
   Local<Object> instance = NanNew<ObjectTemplate>(ObjectCreator)->NewInstance();
 
@@ -264,20 +264,20 @@ NAN_METHOD(NodeProxy::CreateFunction) {
     NanThrowTypeError("createFunction requires the second argument to be a Function.");
   }
 
-  proxyHandler->SetHiddenValue(NanSymbol("callTrap"), args[1]);
+  proxyHandler->SetHiddenValue(NanNew<String>("callTrap"), args[1]);
   Local<Value> constructorTrap;
   if(args.Length() > 2) {
     constructorTrap = args[2];
   } else {
     constructorTrap = NanNew(NanUndefined());
   }
-  proxyHandler->SetHiddenValue(NanSymbol("constructorTrap"), constructorTrap);
+  proxyHandler->SetHiddenValue(NanNew<String>("constructorTrap"), constructorTrap);
 
   // manage locking states
-  proxyHandler->SetHiddenValue(NanSymbol("trapping"), NanTrue());
-  proxyHandler->SetHiddenValue(NanSymbol("extensible"), NanTrue());
-  proxyHandler->SetHiddenValue(NanSymbol("sealed"), NanFalse());
-  proxyHandler->SetHiddenValue(NanSymbol("frozen"), NanFalse());
+  proxyHandler->SetHiddenValue(NanNew<String>("trapping"), NanTrue());
+  proxyHandler->SetHiddenValue(NanNew<String>("extensible"), NanTrue());
+  proxyHandler->SetHiddenValue(NanNew<String>("sealed"), NanFalse());
+  proxyHandler->SetHiddenValue(NanNew<String>("frozen"), NanFalse());
 
 
   Local<Object> fn = NanNew<ObjectTemplate>(FunctionCreator)->NewInstance();
@@ -325,43 +325,43 @@ NAN_METHOD(NodeProxy::Freeze) {
   Local<Object> handler = hide->ToObject();
 
   // if the object already meets the requirements of the function call
-  if (name->Equals(NanSymbol("freeze"))) {
-    if (handler->GetHiddenValue(NanSymbol("frozen"))->BooleanValue()) {
+  if (name->Equals(NanNew<String>("freeze"))) {
+    if (handler->GetHiddenValue(NanNew<String>("frozen"))->BooleanValue()) {
       NanReturnValue(NanTrue());
     }
 
-  } else if (name->Equals(NanSymbol("seal"))) {
-    if (handler->GetHiddenValue(NanSymbol("sealed"))->BooleanValue()) {
+  } else if (name->Equals(NanNew<String>("seal"))) {
+    if (handler->GetHiddenValue(NanNew<String>("sealed"))->BooleanValue()) {
       NanReturnValue(NanTrue());
     }
 
-  } else if (name->Equals(NanSymbol("preventExtensions"))) {
-    if (handler->GetHiddenValue(NanSymbol("extensible"))->BooleanValue()) {
+  } else if (name->Equals(NanNew<String>("preventExtensions"))) {
+    if (handler->GetHiddenValue(NanNew<String>("extensible"))->BooleanValue()) {
       NanReturnValue(NanTrue());
     }
   }
 
   // if this object is not trapping, just set the appropriate parameters
-  if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
-    if (name->Equals(NanSymbol("freeze"))) {
-      handler->SetHiddenValue(NanSymbol("frozen"), NanTrue());
-      handler->SetHiddenValue(NanSymbol("sealed"), NanTrue());
-      handler->SetHiddenValue(NanSymbol("extensible"), NanFalse());
+  if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
+    if (name->Equals(NanNew<String>("freeze"))) {
+      handler->SetHiddenValue(NanNew<String>("frozen"), NanTrue());
+      handler->SetHiddenValue(NanNew<String>("sealed"), NanTrue());
+      handler->SetHiddenValue(NanNew<String>("extensible"), NanFalse());
       NanReturnValue(NanTrue());
 
-    } else if (name->Equals(NanSymbol("seal"))) {
-      handler->SetHiddenValue(NanSymbol("sealed"), NanTrue());
-      handler->SetHiddenValue(NanSymbol("extensible"), NanFalse());
+    } else if (name->Equals(NanNew<String>("seal"))) {
+      handler->SetHiddenValue(NanNew<String>("sealed"), NanTrue());
+      handler->SetHiddenValue(NanNew<String>("extensible"), NanFalse());
       NanReturnValue(NanTrue());
 
-    } else if (name->Equals(NanSymbol("preventExtensions"))) {
-      handler->SetHiddenValue(NanSymbol("extensible"), NanFalse());
+    } else if (name->Equals(NanNew<String>("preventExtensions"))) {
+      handler->SetHiddenValue(NanNew<String>("extensible"), NanFalse());
       NanReturnValue(NanTrue());
     }
   }
 
   // Harmony Proxy handling of fix
-  Local<Function> fix = Local<Function>::Cast(handler->Get(NanSymbol("fix")));
+  Local<Function> fix = Local<Function>::Cast(handler->Get(NanNew<String>("fix")));
 #ifdef _WIN32
   // On windows you get "error C2466: cannot allocate an array of constant size 0" and we use a pointer
   Local<Value>* argv;
@@ -377,20 +377,20 @@ NAN_METHOD(NodeProxy::Freeze) {
   Local<Object> parts = pieces->ToObject();
 
   // set the appropriate parameters
-  if (name->Equals(NanSymbol("freeze"))) {
-    parts->SetHiddenValue(NanSymbol("frozen"), NanTrue());
-    parts->SetHiddenValue(NanSymbol("sealed"), NanTrue());
-    parts->SetHiddenValue(NanSymbol("extensible"), NanFalse());
+  if (name->Equals(NanNew<String>("freeze"))) {
+    parts->SetHiddenValue(NanNew<String>("frozen"), NanTrue());
+    parts->SetHiddenValue(NanNew<String>("sealed"), NanTrue());
+    parts->SetHiddenValue(NanNew<String>("extensible"), NanFalse());
 
-  } else if (name->Equals(NanSymbol("seal"))) {
-    parts->SetHiddenValue(NanSymbol("sealed"), NanTrue());
-    parts->SetHiddenValue(NanSymbol("extensible"), NanFalse());
+  } else if (name->Equals(NanNew<String>("seal"))) {
+    parts->SetHiddenValue(NanNew<String>("sealed"), NanTrue());
+    parts->SetHiddenValue(NanNew<String>("extensible"), NanFalse());
 
-  } else if (name->Equals(NanSymbol("preventExtensions"))) {
-    parts->SetHiddenValue(NanSymbol("extensible"), NanFalse());
+  } else if (name->Equals(NanNew<String>("preventExtensions"))) {
+    parts->SetHiddenValue(NanNew<String>("extensible"), NanFalse());
   }
 
-  parts->SetHiddenValue(NanSymbol("trapping"), NanFalse());
+  parts->SetHiddenValue(NanNew<String>("trapping"), NanFalse());
 
   // overwrite the handler, making handler available for GC
   obj->SetInternalField(0, parts);
@@ -434,17 +434,17 @@ NAN_METHOD(NodeProxy::IsLocked) {
 
   Local<Object> obj = hide->ToObject();
 
-  if (name->Equals(NanSymbol("isExtensible"))) {
-    NanReturnValue(obj->GetHiddenValue(NanSymbol("extensible"))->ToBoolean());
+  if (name->Equals(NanNew<String>("isExtensible"))) {
+    NanReturnValue(obj->GetHiddenValue(NanNew<String>("extensible"))->ToBoolean());
 
-  } else if (name->Equals(NanSymbol("isSealed"))) {
-    NanReturnValue(obj->GetHiddenValue(NanSymbol("sealed"))->ToBoolean());
+  } else if (name->Equals(NanNew<String>("isSealed"))) {
+    NanReturnValue(obj->GetHiddenValue(NanNew<String>("sealed"))->ToBoolean());
 
-  } else if (name->Equals(NanSymbol("isTrapping"))) {
-    NanReturnValue(obj->GetHiddenValue(NanSymbol("trapping"))->ToBoolean());
+  } else if (name->Equals(NanNew<String>("isTrapping"))) {
+    NanReturnValue(obj->GetHiddenValue(NanNew<String>("trapping"))->ToBoolean());
 
-  } else if (name->Equals(NanSymbol("isFrozen"))) {
-    NanReturnValue(obj->GetHiddenValue(NanSymbol("frozen"))->ToBoolean());
+  } else if (name->Equals(NanNew<String>("isFrozen"))) {
+    NanReturnValue(obj->GetHiddenValue(NanNew<String>("frozen"))->ToBoolean());
   }
 
   NanReturnValue(NanFalse());
@@ -489,12 +489,12 @@ NAN_METHOD(NodeProxy::GetOwnPropertyDescriptor) {
 
   Local<Object> handler = temp->ToObject();
 
-  if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+  if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
     NanReturnValue(handler->Get(name));
   }
 
   Local<Function> getOwn = Local<Function>::Cast(
-       handler->Get(NanSymbol("getOwnPropertyDescriptor")));
+       handler->Get(NanNew<String>("getOwnPropertyDescriptor")));
 
   Local<Value> argv[1] = {args[1]};
   NanReturnValue(getOwn->Call(obj, 1, argv));
@@ -544,20 +544,20 @@ NAN_METHOD(NodeProxy::DefineProperty) {
   Local<String> name = args[1]->ToString();
   Local<Object> handler = temp->ToObject();
 
-  if (handler->GetHiddenValue(NanSymbol("sealed"))->BooleanValue() ||
-  !handler->Has(NanSymbol("defineProperty"))) {
+  if (handler->GetHiddenValue(NanNew<String>("sealed"))->BooleanValue() ||
+  !handler->Has(NanNew<String>("defineProperty"))) {
     NanReturnValue(NanFalse());
   }
 
-  if (!handler->GetHiddenValue(NanSymbol("extensible"))->BooleanValue() &&
+  if (!handler->GetHiddenValue(NanNew<String>("extensible"))->BooleanValue() &&
         !handler->Has(name)) {
     NanReturnValue(NanFalse());
   }
 
-  if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+  if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
     Local<Object> desc = handler->Get(name)->ToObject();
 
-    if (desc->Get(NanSymbol("configurable"))->BooleanValue()) {
+    if (desc->Get(NanNew<String>("configurable"))->BooleanValue()) {
       NanReturnValue(NanNew<Boolean>(
           handler->Set(name, args[2]->ToObject())));
     }
@@ -565,7 +565,7 @@ NAN_METHOD(NodeProxy::DefineProperty) {
   }
 
   Local<Function> def = Local<Function>::Cast(
-                  handler->Get(NanSymbol("defineProperty")));
+                  handler->Get(NanNew<String>("defineProperty")));
 
   Local<Value> argv[2] = {args[1], args[2]->ToObject()};
 
@@ -606,16 +606,16 @@ NAN_METHOD(NodeProxy::DefineProperties) {
     Local<Object> props = args[1]->ToObject();
     Local<Object> handler = temp->ToObject();
 
-    if (handler->GetHiddenValue(NanSymbol("sealed"))->BooleanValue()) {
+    if (handler->GetHiddenValue(NanNew<String>("sealed"))->BooleanValue()) {
       NanReturnValue(NanFalse());
     }
 
     bool extensible = handler->GetHiddenValue(
-                  NanSymbol("extensible"))->BooleanValue();
+                  NanNew<String>("extensible"))->BooleanValue();
     Local<Array> names = props->GetPropertyNames();
     uint32_t i = 0, l = names->Length();
 
-    if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+    if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
       for (;i < l; ++i) {
         Local<Object> name = names->CloneElementAt(i);
 
@@ -624,7 +624,7 @@ NAN_METHOD(NodeProxy::DefineProperties) {
         ) {
           Local<Object> tempObj =         handler->Get(name->ToString())->ToObject();
 
-          if (tempObj->Get(NanSymbol("configurable"))->BooleanValue()) {
+          if (tempObj->Get(NanNew<String>("configurable"))->BooleanValue()) {
             if (!handler->Set(name->ToString(),
                       props->Get(name->ToString()))) {
               NanThrowError(
@@ -642,7 +642,7 @@ NAN_METHOD(NodeProxy::DefineProperties) {
       NanReturnValue(NanTrue());
     }
 
-    Local<Function> def =   Local<Function>::Cast(handler->Get(NanSymbol("defineProperty")));
+    Local<Function> def =   Local<Function>::Cast(handler->Get(NanNew<String>("defineProperty")));
 
     TryCatch firstTry;
     for (;i < l; ++i) {
@@ -690,16 +690,16 @@ NAN_METHOD(NodeProxy::New) {
   Local<Object> obj = data->ToObject();
 
   if (args.IsConstructCall()) {
-    info = obj->GetHiddenValue(NanSymbol("constructorTrap"));
+    info = obj->GetHiddenValue(NanNew<String>("constructorTrap"));
 
     if (!info.IsEmpty() && info->IsFunction()) {
       fn = Local<Function>::Cast(info);
     } else {
       fn = Local<Function>::Cast(
-          obj->GetHiddenValue(NanSymbol("callTrap")));
+          obj->GetHiddenValue(NanNew<String>("callTrap")));
     }
   } else {
-    fn = Local<Function>::Cast(obj->GetHiddenValue(NanSymbol("callTrap")));
+    fn = Local<Function>::Cast(obj->GetHiddenValue(NanNew<String>("callTrap")));
   }
 
   int i = 0, l = args.Length();
@@ -748,11 +748,11 @@ NAN_PROPERTY_GETTER(NodeProxy::GetNamedProperty) {
 
   // if the Proxy isn't trapping, return
   // the value set on the property descriptor
-  if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+  if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
     NanReturnValue(CallPropertyDescriptorGet(handler->Get(property), args.This(), argv1));
   }
 
-  Local<Value> get = handler->Get(NanSymbol("get"));
+  Local<Value> get = handler->Get(NanNew<String>("get"));
   if (get->IsFunction()) {
     fn = Local<Function>::Cast(get);
     Local<Value> argv[2] = {args.This(), property};
@@ -760,14 +760,14 @@ NAN_PROPERTY_GETTER(NodeProxy::GetNamedProperty) {
     NanReturnValue(fn->Call(handler, 2, argv));
   }
 
-  Local<Value> getPropertyDescriptor = handler->Get(NanSymbol("getPropertyDescriptor"));
+  Local<Value> getPropertyDescriptor = handler->Get(NanNew<String>("getPropertyDescriptor"));
   if (getPropertyDescriptor->IsFunction()) {
     fn = Local<Function>::Cast(getPropertyDescriptor);
 
     NanReturnValue(CallPropertyDescriptorGet(fn->Call(handler, 1, argv1), args.This(), argv1));
   }
 
-  Local<Value> getOwnPropertyDescriptor = handler->Get(NanSymbol("getOwnPropertyDescriptor"));
+  Local<Value> getOwnPropertyDescriptor = handler->Get(NanNew<String>("getOwnPropertyDescriptor"));
   if (getOwnPropertyDescriptor->IsFunction()) {
     fn = Local<Function>::Cast(getOwnPropertyDescriptor);
 
@@ -778,14 +778,14 @@ NAN_PROPERTY_GETTER(NodeProxy::GetNamedProperty) {
 
 NAN_INLINE Local<Value> NodeProxy::CallPropertyDescriptorGet(Local<Value> descriptor, Handle<Object> context, Local<Value> args[1]) {
   if (descriptor->IsObject()) {
-    Local<Value> get = descriptor->ToObject()->Get(NanSymbol("get"));
+    Local<Value> get = descriptor->ToObject()->Get(NanNew<String>("get"));
 
     if (get->IsFunction()) {
       Local<Function> fn = Local<Function>::Cast(get);
       return fn->Call(context, 1, args);
     }
 
-    return descriptor->ToObject()->Get(NanSymbol("value"));
+    return descriptor->ToObject()->Get(NanNew<String>("value"));
   }
 
   return NanNew(NanUndefined());
@@ -818,8 +818,8 @@ NAN_PROPERTY_SETTER(NodeProxy::SetNamedProperty) {
 
   // if the Proxy isn't trapping, return the
   // value set on the property descriptor
-  if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
-    if (handler->GetHiddenValue(NanSymbol("extensible"))->BooleanValue() ||
+  if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
+    if (handler->GetHiddenValue(NanNew<String>("extensible"))->BooleanValue() ||
       handler->Has(property)
     ) {
       Local<Value> pd = handler->Get(property);
@@ -831,7 +831,7 @@ NAN_PROPERTY_SETTER(NodeProxy::SetNamedProperty) {
       Local<Object> pd_obj = pd->ToObject();
 
       if (!pd_obj->GetHiddenValue(
-            NanSymbol("writable"))->BooleanValue()
+            NanNew<String>("writable"))->BooleanValue()
       ) {
         NanThrowError(
               String::Concat(
@@ -839,7 +839,7 @@ NAN_PROPERTY_SETTER(NodeProxy::SetNamedProperty) {
                     property));
       }
 
-      Local<Value> set = pd_obj->Get(NanSymbol("set"));
+      Local<Value> set = pd_obj->Get(NanNew<String>("set"));
       if (set->IsFunction()) {
         Local<Function> fn = Local<Function>::Cast(set);
         fn->Call(args.This(), 2, argv2);
@@ -847,7 +847,7 @@ NAN_PROPERTY_SETTER(NodeProxy::SetNamedProperty) {
         NanReturnValue(value);
       }
 
-      if (pd_obj->Set(NanSymbol("value"), value)) {
+      if (pd_obj->Set(NanNew<String>("value"), value)) {
         NanReturnValue(value);
       }
       NanReturnUndefined();
@@ -856,7 +856,7 @@ NAN_PROPERTY_SETTER(NodeProxy::SetNamedProperty) {
   }
 
   // does the ProxyHandler have a set method?
-  Local<Value> set = handler->Get(NanSymbol("set"));
+  Local<Value> set = handler->Get(NanNew<String>("set"));
   if (set->IsFunction()) {
     Local<Function> set_fn = Local<Function>::Cast(set);
     Local<Value> argv3[3] = {args.This(), property, value};
@@ -865,14 +865,14 @@ NAN_PROPERTY_SETTER(NodeProxy::SetNamedProperty) {
     NanReturnValue(value);
   }
 
-  Local<Value> getOwnPropertyDescriptor = handler->Get(NanSymbol("getOwnPropertyDescriptor"));
+  Local<Value> getOwnPropertyDescriptor = handler->Get(NanNew<String>("getOwnPropertyDescriptor"));
   if (getOwnPropertyDescriptor->IsFunction()) {
     Local<Function> gopd_fn = Local<Function>::Cast(getOwnPropertyDescriptor);
     Local<Value> argv[1] = {property};
     NanReturnValue(CallPropertyDescriptorSet(gopd_fn->Call(handler, 1, argv), args.This(), property, value));
   }
 
-  Local<Value> getPropertyDescriptor = handler->Get(NanSymbol("getPropertyDescriptor"));
+  Local<Value> getPropertyDescriptor = handler->Get(NanNew<String>("getPropertyDescriptor"));
   if (getPropertyDescriptor->IsFunction()) {
     Local<Function> gpd_fn = Local<Function>::Cast(getPropertyDescriptor);
     Local<Value> argv[1] = {property};
@@ -885,15 +885,15 @@ NAN_PROPERTY_SETTER(NodeProxy::SetNamedProperty) {
 NAN_INLINE Local<Value> NodeProxy::CallPropertyDescriptorSet(Local<Value> descriptor, Handle<Object> context, Local<Value> name, Local<Value> value) {
   if (descriptor->IsObject()) {
     Local<Object> pd = descriptor->ToObject();
-    Local<Value> set = pd->Get(NanSymbol("set"));
+    Local<Value> set = pd->Get(NanNew<String>("set"));
 
     if (set->IsFunction()) {
       Local<Function> fn = Local<Function>::Cast(set);
       Local<Value> args[2] = { name, value };
       return fn->Call(context, 2, args);
 
-    } else if (pd->Get(NanSymbol("writable"))->BooleanValue()) {
-      if (pd->Set(NanSymbol("value"), value)) {
+    } else if (pd->Get(NanNew<String>("writable"))->BooleanValue()) {
+      if (pd->Set(NanNew<String>("value"), value)) {
         return value;
       }
     }
@@ -928,7 +928,7 @@ NAN_PROPERTY_QUERY(NodeProxy::QueryNamedPropertyInteger) {
 
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
-    if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+    if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
       if (handler->Has(property)) {
         Local<Value> pd = handler->Get(property);
 
@@ -942,7 +942,7 @@ NAN_PROPERTY_QUERY(NodeProxy::QueryNamedPropertyInteger) {
 
     Local<Value> argv[1] = {property};
 
-    Local<Value> hasOwn = handler->Get(NanSymbol("hasOwn"));
+    Local<Value> hasOwn = handler->Get(NanNew<String>("hasOwn"));
     if (hasOwn->IsFunction()) {
       Local<Function> hasOwn_fn = Local<Function>::Cast(hasOwn);
       NanReturnValue(hasOwn_fn->Call(handler, 1, argv)->BooleanValue() ?
@@ -950,7 +950,7 @@ NAN_PROPERTY_QUERY(NodeProxy::QueryNamedPropertyInteger) {
                      DoesntHavePropertyResponse);
     }
 
-    Local<Value> has = handler->Get(NanSymbol("has"));
+    Local<Value> has = handler->Get(NanNew<String>("has"));
     if (has->IsFunction()) {
       Local<Function> has_fn = Local<Function>::Cast(has);
       NanReturnValue(has_fn->Call(handler, 1, argv)->BooleanValue() ?
@@ -958,7 +958,7 @@ NAN_PROPERTY_QUERY(NodeProxy::QueryNamedPropertyInteger) {
                      DoesntHavePropertyResponse);
     }
 
-    Local<Value> getOwnPropertyDescriptor = handler->Get(NanSymbol("getOwnPropertyDescriptor"));
+    Local<Value> getOwnPropertyDescriptor = handler->Get(NanNew<String>("getOwnPropertyDescriptor"));
     if (getOwnPropertyDescriptor->IsFunction()) {
       Local<Function> gopd_fn = Local<Function>::Cast(getOwnPropertyDescriptor);
       Local<Value> gopd_pd = gopd_fn->Call(handler, 1, argv);
@@ -968,8 +968,8 @@ NAN_PROPERTY_QUERY(NodeProxy::QueryNamedPropertyInteger) {
       }
     }
 
-    Local<Value> getPropertyDescriptor = handler->Get(NanSymbol("getPropertyDescriptor"));
-    if (handler->Has(NanSymbol("getPropertyDescriptor"))) {
+    Local<Value> getPropertyDescriptor = handler->Get(NanNew<String>("getPropertyDescriptor"));
+    if (handler->Has(NanNew<String>("getPropertyDescriptor"))) {
       Local<Function> gpd_fn = Local<Function>::Cast(getPropertyDescriptor);
       Local<Value> gpd_pd = gpd_fn->Call(handler, 1, argv);
 
@@ -995,20 +995,20 @@ NodeProxy::GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd) {
   NanScope();
   uint32_t ret = None;
 
-  if (pd->Get(NanSymbol("configurable"))->IsBoolean() &&
-        !pd->Get(NanSymbol("configurable"))->BooleanValue()) {
+  if (pd->Get(NanNew<String>("configurable"))->IsBoolean() &&
+        !pd->Get(NanNew<String>("configurable"))->BooleanValue()) {
     // return NanNew<Integer>(DontDelete);
     ret &= DontDelete;
   }
 
-  if (pd->Get(NanSymbol("enumerable"))->IsBoolean() &&
-             !pd->Get(NanSymbol("enumerable"))->BooleanValue()) {
+  if (pd->Get(NanNew<String>("enumerable"))->IsBoolean() &&
+             !pd->Get(NanNew<String>("enumerable"))->BooleanValue()) {
     // return NanNew<Integer>(DontEnum);
     ret &= DontEnum;
   }
 
-  if (pd->Get(NanSymbol("writable"))->IsBoolean() &&
-             !pd->Get(NanSymbol("writable"))->BooleanValue()) {
+  if (pd->Get(NanNew<String>("writable"))->IsBoolean() &&
+             !pd->Get(NanNew<String>("writable"))->BooleanValue()) {
      // return NanNew<Integer>(ReadOnly);
      ret &= ReadOnly;
   }
@@ -1037,15 +1037,15 @@ NAN_PROPERTY_DELETER(NodeProxy::DeleteNamedProperty) {
     Local<Object> handler = data->ToObject();
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
-    if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
-      if (!handler->GetHiddenValue(NanSymbol("frozen"))->BooleanValue()) {
+    if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
+      if (!handler->GetHiddenValue(NanNew<String>("frozen"))->BooleanValue()) {
         Local<Value> pd = handler->Get(property);
 
         if (pd->IsObject()) {
           Local<Object> pd_obj = pd->ToObject();
 
-          if (pd_obj->Get(NanSymbol("configurable"))->IsBoolean() &&
-              pd_obj->Get(NanSymbol("configurable"))->BooleanValue()
+          if (pd_obj->Get(NanNew<String>("configurable"))->IsBoolean() &&
+              pd_obj->Get(NanNew<String>("configurable"))->BooleanValue()
           ) {
             NanReturnValue(NanNew<Boolean>(handler->Delete(property)));
           }
@@ -1054,7 +1054,7 @@ NAN_PROPERTY_DELETER(NodeProxy::DeleteNamedProperty) {
       NanReturnValue(NanFalse());
     }
 
-    Local<Value> delete_ = handler->Get(NanSymbol("delete"));
+    Local<Value> delete_ = handler->Get(NanNew<String>("delete"));
     if (delete_->IsFunction()) {
       Local<Function> fn = Local<Function>::Cast(delete_);
       Local<Value> argv[1] = {property};
@@ -1093,11 +1093,11 @@ NAN_PROPERTY_ENUMERATOR(NodeProxy::EnumerateNamedProperties) {
 
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
-    if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+    if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
       NanReturnValue(handler->GetPropertyNames());
     }
 
-    Local<Value> enumerate = handler->Get(NanSymbol("enumerate"));
+    Local<Value> enumerate = handler->Get(NanNew<String>("enumerate"));
     if (enumerate->IsFunction()) {
       Local<Function> enumerate_fn = Local<Function>::Cast(enumerate);
       Local<Value> names = enumerate_fn->Call(handler, 0, argv);
@@ -1107,7 +1107,7 @@ NAN_PROPERTY_ENUMERATOR(NodeProxy::EnumerateNamedProperties) {
       }
     }
 
-    Local<Value> keys = handler->Get(NanSymbol("keys"));
+    Local<Value> keys = handler->Get(NanNew<String>("keys"));
     if (keys->IsFunction()) {
       Local<Function> keys_fn = Local<Function>::Cast(enumerate);
       Local<Value> names = keys_fn->Call(handler, 0, argv);
@@ -1117,7 +1117,7 @@ NAN_PROPERTY_ENUMERATOR(NodeProxy::EnumerateNamedProperties) {
       }
     }
 
-    Local<Value> getPropertyNames = handler->Get(NanSymbol("getPropertyNames"));
+    Local<Value> getPropertyNames = handler->Get(NanNew<String>("getPropertyNames"));
     if (getPropertyNames->IsFunction()) {
       Local<Function> gpn_fn = Local<Function>::Cast(getPropertyNames);
       Local<Value> names = gpn_fn->Call(handler, 0, argv);
@@ -1160,11 +1160,11 @@ NAN_INDEX_GETTER(NodeProxy::GetIndexedProperty) {
 
   // if the Proxy isn't trapping, return
   // the value set on the index descriptor
-  if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+  if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
     NanReturnValue(CallPropertyDescriptorGet(handler->Get(idx), args.This(), argv1));
   }
 
-  Local<Value> get = handler->Get(NanSymbol("get"));
+  Local<Value> get = handler->Get(NanNew<String>("get"));
   if (get->IsFunction()) {
     fn = Local<Function>::Cast(get);
     Local<Value> argv[2] = {args.This(), idx};
@@ -1172,14 +1172,14 @@ NAN_INDEX_GETTER(NodeProxy::GetIndexedProperty) {
     NanReturnValue(fn->Call(handler, 2, argv));
   }
 
-  Local<Value> getPropertyDescriptor = handler->Get(NanSymbol("getPropertyDescriptor"));
+  Local<Value> getPropertyDescriptor = handler->Get(NanNew<String>("getPropertyDescriptor"));
   if (getPropertyDescriptor->IsFunction()) {
     fn = Local<Function>::Cast(getPropertyDescriptor);
 
     NanReturnValue(CallPropertyDescriptorGet(fn->Call(handler, 1, argv1), args.This(), argv1));
   }
 
-  Local<Value> getOwnPropertyDescriptor = handler->Get(NanSymbol("getOwnPropertyDescriptor"));
+  Local<Value> getOwnPropertyDescriptor = handler->Get(NanNew<String>("getOwnPropertyDescriptor"));
   if (getOwnPropertyDescriptor->IsFunction()) {
     fn = Local<Function>::Cast(getOwnPropertyDescriptor);
 
@@ -1216,8 +1216,8 @@ NAN_INDEX_SETTER(NodeProxy::SetIndexedProperty) {
 
   // if the Proxy isn't trapping, return the
   // value set on the index descriptor
-  if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
-    if (handler->GetHiddenValue(NanSymbol("extensible"))->BooleanValue() ||
+  if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
+    if (handler->GetHiddenValue(NanNew<String>("extensible"))->BooleanValue() ||
       handler->Has(index)
     ) {
       Local<Value> pd = handler->Get(index);
@@ -1229,7 +1229,7 @@ NAN_INDEX_SETTER(NodeProxy::SetIndexedProperty) {
       Local<Object> pd_obj = pd->ToObject();
 
       if (!pd_obj->GetHiddenValue(
-            NanSymbol("writable"))->BooleanValue()
+            NanNew<String>("writable"))->BooleanValue()
       ) {
         NanThrowError(
               String::Concat(
@@ -1237,7 +1237,7 @@ NAN_INDEX_SETTER(NodeProxy::SetIndexedProperty) {
                     Local<String>::Cast(idx)));
       }
 
-      Local<Value> set = pd_obj->Get(NanSymbol("set"));
+      Local<Value> set = pd_obj->Get(NanNew<String>("set"));
       if (set->IsFunction()) {
         Local<Function> fn = Local<Function>::Cast(set);
         fn->Call(args.This(), 2, argv2);
@@ -1245,7 +1245,7 @@ NAN_INDEX_SETTER(NodeProxy::SetIndexedProperty) {
         NanReturnValue(value);
       }
 
-      if (pd_obj->Set(NanSymbol("value"), value)) {
+      if (pd_obj->Set(NanNew<String>("value"), value)) {
         NanReturnValue(value);
       }
       NanReturnUndefined();
@@ -1254,7 +1254,7 @@ NAN_INDEX_SETTER(NodeProxy::SetIndexedProperty) {
   }
 
   // does the ProxyHandler have a set method?
-  Local<Value> set = handler->Get(NanSymbol("set"));
+  Local<Value> set = handler->Get(NanNew<String>("set"));
   if (set->IsFunction()) {
     Local<Function> set_fn = Local<Function>::Cast(set);
     Local<Value> argv3[3] = {args.This(), idx, value};
@@ -1263,14 +1263,14 @@ NAN_INDEX_SETTER(NodeProxy::SetIndexedProperty) {
     NanReturnValue(value);
   }
 
-  Local<Value> getOwnPropertyDescriptor = handler->Get(NanSymbol("getOwnPropertyDescriptor"));
+  Local<Value> getOwnPropertyDescriptor = handler->Get(NanNew<String>("getOwnPropertyDescriptor"));
   if (getOwnPropertyDescriptor->IsFunction()) {
     Local<Function> gopd_fn = Local<Function>::Cast(getOwnPropertyDescriptor);
     Local<Value> argv[1] = {idx};
     NanReturnValue(CallPropertyDescriptorSet(gopd_fn->Call(handler, 1, argv), args.This(), idx, value));
   }
 
-  Local<Value> getPropertyDescriptor = handler->Get(NanSymbol("getPropertyDescriptor"));
+  Local<Value> getPropertyDescriptor = handler->Get(NanNew<String>("getPropertyDescriptor"));
   if (getPropertyDescriptor->IsFunction()) {
     Local<Function> gpd_fn = Local<Function>::Cast(getPropertyDescriptor);
     Local<Value> argv[1] = {idx};
@@ -1306,7 +1306,7 @@ NAN_INDEX_QUERY(NodeProxy::QueryIndexedPropertyInteger) {
 
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
-    if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
+    if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
       if (handler->Has(index)) {
         Local<Value> pd = handler->Get(index);
 
@@ -1320,7 +1320,7 @@ NAN_INDEX_QUERY(NodeProxy::QueryIndexedPropertyInteger) {
 
     Local<Value> argv[1] = {idx};
 
-    Local<Value> hasOwn = handler->Get(NanSymbol("hasOwn"));
+    Local<Value> hasOwn = handler->Get(NanNew<String>("hasOwn"));
     if (hasOwn->IsFunction()) {
       Local<Function> hasOwn_fn = Local<Function>::Cast(hasOwn);
       NanReturnValue(hasOwn_fn->Call(handler, 1, argv)->BooleanValue() ?
@@ -1328,7 +1328,7 @@ NAN_INDEX_QUERY(NodeProxy::QueryIndexedPropertyInteger) {
                      DoesntHavePropertyResponse);
     }
 
-    Local<Value> has = handler->Get(NanSymbol("has"));
+    Local<Value> has = handler->Get(NanNew<String>("has"));
     if (has->IsFunction()) {
       Local<Function> has_fn = Local<Function>::Cast(has);
       NanReturnValue(has_fn->Call(handler, 1, argv)->BooleanValue() ?
@@ -1336,7 +1336,7 @@ NAN_INDEX_QUERY(NodeProxy::QueryIndexedPropertyInteger) {
                      DoesntHavePropertyResponse);
     }
 
-    Local<Value> getOwnPropertyDescriptor = handler->Get(NanSymbol("getOwnPropertyDescriptor"));
+    Local<Value> getOwnPropertyDescriptor = handler->Get(NanNew<String>("getOwnPropertyDescriptor"));
     if (getOwnPropertyDescriptor->IsFunction()) {
       Local<Function> gopd_fn = Local<Function>::Cast(getOwnPropertyDescriptor);
       Local<Value> gopd_pd = gopd_fn->Call(handler, 1, argv);
@@ -1346,8 +1346,8 @@ NAN_INDEX_QUERY(NodeProxy::QueryIndexedPropertyInteger) {
       }
     }
 
-    Local<Value> getPropertyDescriptor = handler->Get(NanSymbol("getPropertyDescriptor"));
-    if (handler->Has(NanSymbol("getPropertyDescriptor"))) {
+    Local<Value> getPropertyDescriptor = handler->Get(NanNew<String>("getPropertyDescriptor"));
+    if (handler->Has(NanNew<String>("getPropertyDescriptor"))) {
       Local<Function> gpd_fn = Local<Function>::Cast(getPropertyDescriptor);
       Local<Value> gpd_pd = gpd_fn->Call(handler, 1, argv);
 
@@ -1384,15 +1384,15 @@ NAN_INDEX_DELETER(NodeProxy::DeleteIndexedProperty) {
     Local<Object> handler = data->ToObject();
     // if the Proxy isn't trapping,
     // return the value set on the property descriptor
-    if (!handler->GetHiddenValue(NanSymbol("trapping"))->BooleanValue()) {
-      if (!handler->GetHiddenValue(NanSymbol("frozen"))->BooleanValue()) {
+    if (!handler->GetHiddenValue(NanNew<String>("trapping"))->BooleanValue()) {
+      if (!handler->GetHiddenValue(NanNew<String>("frozen"))->BooleanValue()) {
         Local<Value> pd = handler->Get(idx);
 
         if (pd->IsObject()) {
           Local<Object> pd_obj = pd->ToObject();
 
-          if (pd_obj->Get(NanSymbol("configurable"))->IsBoolean() &&
-              pd_obj->Get(NanSymbol("configurable"))->BooleanValue()
+          if (pd_obj->Get(NanNew<String>("configurable"))->IsBoolean() &&
+              pd_obj->Get(NanNew<String>("configurable"))->BooleanValue()
           ) {
             NanReturnValue(NanNew<Boolean>(handler->Delete(index)));
           }
@@ -1401,7 +1401,7 @@ NAN_INDEX_DELETER(NodeProxy::DeleteIndexedProperty) {
       NanReturnValue(NanFalse());
     }
 
-    Local<Value> delete_ = handler->Get(NanSymbol("delete"));
+    Local<Value> delete_ = handler->Get(NanNew<String>("delete"));
     if (delete_->IsFunction()) {
       Local<Function> fn = Local<Function>::Cast(delete_);
       Local<Value> argv[1] = {idx};
@@ -1425,87 +1425,87 @@ void NodeProxy::Init(Handle<Object> target) {
 
 // main functions
   Local<Function> create = NanNew<FunctionTemplate>(Create)->GetFunction();
-  Local<String> _create = NanSymbol("create");
+  Local<String> _create = NanNew<String>("create");
   create->SetName(_create);
   target->Set(_create, create, DontDelete);
 
   Local<Function> createFunction = NanNew<FunctionTemplate>(CreateFunction)->GetFunction();
-  Local<String> _createFunction = NanSymbol("createFunction");
+  Local<String> _createFunction = NanNew<String>("createFunction");
   create->SetName(_createFunction);
   target->Set(_createFunction, createFunction, DontDelete);
 
 // freeze function assignment
   Local<Function> freeze = NanNew<FunctionTemplate>(Freeze)->GetFunction();
-  Local<String> _freeze = NanSymbol("freeze");
+  Local<String> _freeze = NanNew<String>("freeze");
   freeze->SetName(_freeze);
   target->Set(_freeze, freeze, DontDelete);
 
   Local<Function> seal = NanNew<FunctionTemplate>(Freeze)->GetFunction();
-  Local<String> _seal = NanSymbol("seal");
+  Local<String> _seal = NanNew<String>("seal");
   seal->SetName(_seal);
   target->Set(_seal, seal, DontDelete);
 
   Local<Function> prevent = NanNew<FunctionTemplate>(Freeze)->GetFunction();
-  Local<String> _preventExtensions = NanSymbol("preventExtensions");
+  Local<String> _preventExtensions = NanNew<String>("preventExtensions");
   prevent->SetName(_preventExtensions);
   target->Set(_preventExtensions, prevent, DontDelete);
 
 // check function assignment
   Local<Function> isfrozen = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
-  Local<String> _isFrozen = NanSymbol("isFrozen");
+  Local<String> _isFrozen = NanNew<String>("isFrozen");
   isfrozen->SetName(_isFrozen);
   target->Set(_isFrozen, isfrozen, DontDelete);
 
   Local<Function> issealed = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
-  Local<String> _isSealed = NanSymbol("isSealed");
+  Local<String> _isSealed = NanNew<String>("isSealed");
   issealed->SetName(_isSealed);
   target->Set(_isSealed, issealed, DontDelete);
 
   Local<Function> isextensible = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
-  Local<String> _isExtensible = NanSymbol("isExtensible");
+  Local<String> _isExtensible = NanNew<String>("isExtensible");
   isextensible->SetName(_isExtensible);
   target->Set(_isExtensible, isextensible, DontDelete);
 
 // part of harmony proxies
   Local<Function> istrapping = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
-  Local<String> _isTrapping = NanSymbol("isTrapping");
+  Local<String> _isTrapping = NanNew<String>("isTrapping");
   istrapping->SetName(_isTrapping);
   target->Set(_isTrapping, istrapping, DontDelete);
 
 // ECMAScript 5
   Local<Function> getOwnPropertyDescriptor = NanNew<FunctionTemplate>(GetOwnPropertyDescriptor)->GetFunction();
-  Local<String> _getOwnPropertyDescriptor = NanSymbol("getOwnPropertyDescriptor");
+  Local<String> _getOwnPropertyDescriptor = NanNew<String>("getOwnPropertyDescriptor");
   getOwnPropertyDescriptor->SetName(_getOwnPropertyDescriptor);
   target->Set(_getOwnPropertyDescriptor, getOwnPropertyDescriptor, DontDelete);
 
   Local<Function> defineProperty = NanNew<FunctionTemplate>(DefineProperty)->GetFunction();
-  Local<String> _defineProperty = NanSymbol("defineProperty");
+  Local<String> _defineProperty = NanNew<String>("defineProperty");
   defineProperty->SetName(_defineProperty);
   target->Set(_defineProperty, defineProperty, DontDelete);
 
   Local<Function> defineProperties = NanNew<FunctionTemplate>(DefineProperties)->GetFunction();
-  Local<String> _defineProperties = NanSymbol("defineProperties");
+  Local<String> _defineProperties = NanNew<String>("defineProperties");
   defineProperties->SetName(_defineProperties);
   target->Set(_defineProperties, defineProperties, DontDelete);
 
 // additional functions
   Local<Function> clone = NanNew<FunctionTemplate>(Clone)->GetFunction();
-  Local<String> _clone = NanSymbol("clone");
+  Local<String> _clone = NanNew<String>("clone");
   clone->SetName(_clone);
   target->Set(_clone, clone, DontDelete);
 
   Local<Function> hidden = NanNew<FunctionTemplate>(Hidden)->GetFunction();
-  Local<String> _hidden = NanSymbol("hidden");
+  Local<String> _hidden = NanNew<String>("hidden");
   hidden->SetName(_hidden);
   target->Set(_hidden, hidden, DontDelete);
 
   Local<Function> setPrototype = NanNew<FunctionTemplate>(SetPrototype)->GetFunction();
-  Local<String> _setPrototype = NanSymbol("setPrototype");
+  Local<String> _setPrototype = NanNew<String>("setPrototype");
   setPrototype->SetName(_setPrototype);
   target->Set(_setPrototype, setPrototype, DontDelete);
 
   Local<Function> isProxy_ = NanNew<FunctionTemplate>(IsProxy)->GetFunction();
-  Local<String> _isProxy = NanSymbol("isProxy");
+  Local<String> _isProxy = NanNew<String>("isProxy");
   hidden->SetName(_isProxy);
   target->Set(_isProxy, isProxy_, DontDelete);
 
