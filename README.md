@@ -7,44 +7,44 @@ Issues: http://github.com/samshull/node-proxy/issues
 
 Methods:
 
-Object create(ProxyHandler handler [, Object proto ] ) throws Error, TypeError
+`Object create(ProxyHandler handler [, Object proto ] ) throws Error, TypeError`
 
-Function createFunction(ProxyHandler handler, Function callTrap [, Function constructTrap ] ) throws Error, TypeError
+`Function createFunction(ProxyHandler handler, Function callTrap [, Function constructTrap ] ) throws Error, TypeError`
 
-Boolean isTrapping(Object obj) throws Error
+`Boolean isTrapping(Object obj) throws Error`
 
 
 Additional Methods (for ECMAScript 5 compatibliity): @see http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-262.pdf
 
-Boolean freeze(Object obj) throws Error, TypeError
+`Boolean freeze(Object obj) throws Error, TypeError`
 
-Boolean seal(Object obj) throws Error, TypeError
+`Boolean seal(Object obj) throws Error, TypeError`
 
-Boolean preventExtensions(Object obj) throws Error, TypeError
+`Boolean preventExtensions(Object obj) throws Error, TypeError`
 
-Boolean isFrozen(Object obj) throws Error, TypeError
+`Boolean isFrozen(Object obj) throws Error, TypeError`
 
-Boolean isSealed(Object obj) throws Error, TypeError
+`Boolean isSealed(Object obj) throws Error, TypeError`
 
-Boolean isExtensible(Object obj) throws Error, TypeError
+`Boolean isExtensible(Object obj) throws Error, TypeError`
 
-PropertyDescriptor getOwnPropertyDescriptor(Object obj, String name) throws Error, TypeError
+`PropertyDescriptor getOwnPropertyDescriptor(Object obj, String name) throws Error, TypeError`
 
-Boolean defineProperty(Object obj, String name, PropertyDescriptor pd) throws Error, TypeError
+`Boolean defineProperty(Object obj, String name, PropertyDescriptor pd) throws Error, TypeError`
 
-Boolean defineProperties(Object obj, Object descriptors) throws Error, TypeError
+`Boolean defineProperties(Object obj, Object descriptors) throws Error, TypeError`
 
 
 More methods:
 
-Object hidden(Object obj, String name [, Object value ] ) throws Error
+`Object hidden(Object obj, String name [, Object value ] ) throws Error`
 - Set or retrieve a hidden property on an Object
 
-Object clone(Object obj) throws Error
+`Object clone(Object obj) throws Error`
 - Create a shallow copy of an Object
 
-Boolean isProxy(Object obj)
+`Boolean isProxy(Object obj)`
 - determine if an object was created by Proxy
 
-Boolean setPrototype(Object obj, Object obj) throws Error
--set the prototype of a given object to the second given object
+`Boolean setPrototype(Object obj, Object obj) throws Error`
+- set the prototype of a given object to the second given object
