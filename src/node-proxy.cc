@@ -997,7 +997,6 @@ NodeProxy::GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd) {
 
   if (pd->Get(NanNew<String>("configurable"))->IsBoolean() &&
         !pd->Get(NanNew<String>("configurable"))->BooleanValue()) {
-    // return NanNew<Integer>(DontDelete);
     ret &= DontDelete;
   }
 
@@ -1427,87 +1426,87 @@ void NodeProxy::Init(Handle<Object> target) {
   Local<Function> create = NanNew<FunctionTemplate>(Create)->GetFunction();
   Local<String> _create = NanNew<String>("create");
   create->SetName(_create);
-  target->Set(_create, create, DontDelete);
+  target->Set(_create, create);
 
   Local<Function> createFunction = NanNew<FunctionTemplate>(CreateFunction)->GetFunction();
   Local<String> _createFunction = NanNew<String>("createFunction");
   create->SetName(_createFunction);
-  target->Set(_createFunction, createFunction, DontDelete);
+  target->Set(_createFunction, createFunction);
 
 // freeze function assignment
   Local<Function> freeze = NanNew<FunctionTemplate>(Freeze)->GetFunction();
   Local<String> _freeze = NanNew<String>("freeze");
   freeze->SetName(_freeze);
-  target->Set(_freeze, freeze, DontDelete);
+  target->Set(_freeze, freeze);
 
   Local<Function> seal = NanNew<FunctionTemplate>(Freeze)->GetFunction();
   Local<String> _seal = NanNew<String>("seal");
   seal->SetName(_seal);
-  target->Set(_seal, seal, DontDelete);
+  target->Set(_seal, seal);
 
   Local<Function> prevent = NanNew<FunctionTemplate>(Freeze)->GetFunction();
   Local<String> _preventExtensions = NanNew<String>("preventExtensions");
   prevent->SetName(_preventExtensions);
-  target->Set(_preventExtensions, prevent, DontDelete);
+  target->Set(_preventExtensions, prevent);
 
 // check function assignment
   Local<Function> isfrozen = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
   Local<String> _isFrozen = NanNew<String>("isFrozen");
   isfrozen->SetName(_isFrozen);
-  target->Set(_isFrozen, isfrozen, DontDelete);
+  target->Set(_isFrozen, isfrozen);
 
   Local<Function> issealed = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
   Local<String> _isSealed = NanNew<String>("isSealed");
   issealed->SetName(_isSealed);
-  target->Set(_isSealed, issealed, DontDelete);
+  target->Set(_isSealed, issealed);
 
   Local<Function> isextensible = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
   Local<String> _isExtensible = NanNew<String>("isExtensible");
   isextensible->SetName(_isExtensible);
-  target->Set(_isExtensible, isextensible, DontDelete);
+  target->Set(_isExtensible, isextensible);
 
 // part of harmony proxies
   Local<Function> istrapping = NanNew<FunctionTemplate>(IsLocked)->GetFunction();
   Local<String> _isTrapping = NanNew<String>("isTrapping");
   istrapping->SetName(_isTrapping);
-  target->Set(_isTrapping, istrapping, DontDelete);
+  target->Set(_isTrapping, istrapping);
 
 // ECMAScript 5
   Local<Function> getOwnPropertyDescriptor = NanNew<FunctionTemplate>(GetOwnPropertyDescriptor)->GetFunction();
   Local<String> _getOwnPropertyDescriptor = NanNew<String>("getOwnPropertyDescriptor");
   getOwnPropertyDescriptor->SetName(_getOwnPropertyDescriptor);
-  target->Set(_getOwnPropertyDescriptor, getOwnPropertyDescriptor, DontDelete);
+  target->Set(_getOwnPropertyDescriptor, getOwnPropertyDescriptor);
 
   Local<Function> defineProperty = NanNew<FunctionTemplate>(DefineProperty)->GetFunction();
   Local<String> _defineProperty = NanNew<String>("defineProperty");
   defineProperty->SetName(_defineProperty);
-  target->Set(_defineProperty, defineProperty, DontDelete);
+  target->Set(_defineProperty, defineProperty);
 
   Local<Function> defineProperties = NanNew<FunctionTemplate>(DefineProperties)->GetFunction();
   Local<String> _defineProperties = NanNew<String>("defineProperties");
   defineProperties->SetName(_defineProperties);
-  target->Set(_defineProperties, defineProperties, DontDelete);
+  target->Set(_defineProperties, defineProperties);
 
 // additional functions
   Local<Function> clone = NanNew<FunctionTemplate>(Clone)->GetFunction();
   Local<String> _clone = NanNew<String>("clone");
   clone->SetName(_clone);
-  target->Set(_clone, clone, DontDelete);
+  target->Set(_clone, clone);
 
   Local<Function> hidden = NanNew<FunctionTemplate>(Hidden)->GetFunction();
   Local<String> _hidden = NanNew<String>("hidden");
   hidden->SetName(_hidden);
-  target->Set(_hidden, hidden, DontDelete);
+  target->Set(_hidden, hidden);
 
   Local<Function> setPrototype = NanNew<FunctionTemplate>(SetPrototype)->GetFunction();
   Local<String> _setPrototype = NanNew<String>("setPrototype");
   setPrototype->SetName(_setPrototype);
-  target->Set(_setPrototype, setPrototype, DontDelete);
+  target->Set(_setPrototype, setPrototype);
 
   Local<Function> isProxy_ = NanNew<FunctionTemplate>(IsProxy)->GetFunction();
   Local<String> _isProxy = NanNew<String>("isProxy");
   hidden->SetName(_isProxy);
-  target->Set(_isProxy, isProxy_, DontDelete);
+  target->Set(_isProxy, isProxy_);
 
   Local<ObjectTemplate> temp = NanNew<ObjectTemplate>();
 

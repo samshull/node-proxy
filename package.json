@@ -1,41 +1,46 @@
 {
-    "name"                 : "node-proxy",
-    "version"              : "0.8.0",
-    "description"          : "A module for node implementing __noSuchMethod__-type handlers, such as object overloading, as part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
-    "keywords"             : [
-        "interceptor",
-        "proxy",
-        "overload",
-        "__noSuchMethod__"
-    ],
-    "dependencies"         : {
-        "bindings"         : "1.1.x",
-        "nan"              : "1.1.x"
-    },
-    "contributors"         : [ "Sam Shull <http://www.google.com/profiles/brickysam26>", "richardms <https://github.com/richardms>", "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>", "Kenneth Bentley <mechanicofthesequence@gmail.com>" ],
-    "licenses"             : [
-        {
-            "type"         : "MIT",
-            "url"          : "http://www.opensource.org/licenses/mit-license.html"
-        }
-    ],
-    "bugs"                 : {
-        "url"              : "http://github.com/samshull/node-proxy/issues"
-    },
-    "implements"           : [
-        "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
-    ],
-    "engines"              : {
-        "node"             : ">= 0.8.13",
-        "npm"              : ">= 1.1.17"
-    },
-    "repository"           : {
-        "type"             : "git",
-        "url"              : "http://github.com/samshull/node-proxy"
-    },
-    "main"                 : "./lib/node-proxy.js",
-    "scripts"              : {
-        "install"          : "node-gyp configure build",
-        "test"             : "node test/test.js"
+  "name": "node-proxy",
+  "version": "0.8.0",
+  "description": "A module for node implementing __noSuchMethod__-type handlers, such as object overloading, as part of the Harmony Catch-All Proxies specification found at http://wiki.ecmascript.org/doku.php?id=harmony:proxies",
+  "keywords": [
+    "interceptor",
+    "proxy",
+    "overload",
+    "__noSuchMethod__"
+  ],
+  "dependencies": {
+    "bindings": "1.1.x",
+    "nan": "^1.7.0"
+  },
+  "contributors": [
+    "Sam Shull <http://www.google.com/profiles/brickysam26>",
+    "richardms <https://github.com/richardms>",
+    "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>",
+    "Kenneth Bentley <mechanicofthesequence@gmail.com>"
+  ],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/mit-license.html"
     }
+  ],
+  "bugs": {
+    "url": "http://github.com/samshull/node-proxy/issues"
+  },
+  "implements": [
+    "http://wiki.ecmascript.org/doku.php?id=harmony:proxies"
+  ],
+  "engines": {
+    "node": ">= 0.10.36",
+    "npm": ">= 1.1.17"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/samshull/node-proxy"
+  },
+  "main": "./lib/node-proxy.js",
+  "scripts": {
+    "install": "node-gyp configure build",
+    "test": "node test/test.js"
+  }
 }
