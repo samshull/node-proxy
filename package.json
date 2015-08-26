@@ -6,17 +6,19 @@
     "interceptor",
     "proxy",
     "overload",
-    "__noSuchMethod__"
+    "__noSuchMethod__",
+    "es6"
   ],
   "dependencies": {
-    "bindings": "1.1.x",
-    "nan": "^1.7.0"
+    "bindings": "1",
+    "nan": "2"
   },
   "contributors": [
     "Sam Shull <http://www.google.com/profiles/brickysam26>",
     "richardms <https://github.com/richardms>",
     "Andreas Botsikas <http://webinos.org/bio-andreas-botsikas/>",
-    "Kenneth Bentley <mechanicofthesequence@gmail.com>"
+    "Kenneth Bentley <mechanicofthesequence@gmail.com>",
+    "Gabor Mezo <https://github.com/unbornchikken>"
   ],
   "licenses": [
     {
