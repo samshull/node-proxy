@@ -13,4 +13,4 @@ node_js:
   - '0.12'
   - '4.1'
   - 'iojs'
-script: node test/test.js
+script: npm install&&node test/test.js
