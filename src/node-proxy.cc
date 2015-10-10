@@ -703,7 +703,7 @@ NAN_METHOD(NodeProxy::DefineProperties) {
         def->Call(obj, 2, argv);
 
         if (firstTry.HasCaught()) {
-          info.GetReturnValue().Set(firstTry.ReThrow());
+          firstTry.ReThrow();
           return;
         }
       }
@@ -1069,7 +1069,7 @@ NAN_PROPERTY_QUERY(NodeProxy::QueryNamedPropertyInteger) {
  *
  *
  */
-Handle<Integer>
+Local<Integer>
 NodeProxy::GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd) {
   uint32_t ret = None;
 

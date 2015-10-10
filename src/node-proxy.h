@@ -58,7 +58,7 @@ class NodeProxy {
   protected:
   NodeProxy();
   ~NodeProxy();
-  static Handle<Integer>
+  static Local<Integer>
     GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd);
   static Local<Value> CorrectPropertyDescriptor(Local<Object> pd);
   static NAN_METHOD(ValidateProxyHandler);
