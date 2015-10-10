@@ -51,14 +51,14 @@ using namespace node;
 
 class NodeProxy {
   public:
-  static Persistent<ObjectTemplate> ObjectCreator;
-  static Persistent<ObjectTemplate> FunctionCreator;
+  static Nan::Persistent<ObjectTemplate> ObjectCreator;
+  static Nan::Persistent<ObjectTemplate> FunctionCreator;
   static void Init(Handle<Object> target);
 
   protected:
   NodeProxy();
   ~NodeProxy();
-  static Handle<Integer>
+  static Local<Integer>
     GetPropertyAttributeFromPropertyDescriptor(Local<Object> pd);
   static Local<Value> CorrectPropertyDescriptor(Local<Object> pd);
   static NAN_METHOD(ValidateProxyHandler);
