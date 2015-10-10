@@ -11,7 +11,7 @@
   ],
   "dependencies": {
     "bindings": "1",
-    "nan": "2"
+    "nan": "^2.1.0"
   },
   "contributors": [
     "Sam Shull <http://www.google.com/profiles/brickysam26>",
